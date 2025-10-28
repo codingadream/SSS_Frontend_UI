@@ -120,7 +120,7 @@ const HomePage: React.FC = () => {
       <Divider />
       <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary" }}>Other</Typography>
       <List>
-        <ListItem disablePadding><ListItemButton><ListItemIcon><SettingsIcon /></ListItemIcon><ListItemText primary="Settings" /></ListItemButton></ListItem>
+        <ListItem disablePadding><ListItemButton onClick={() => navigate("/settings")}><ListItemIcon><SettingsIcon /></ListItemIcon><ListItemText primary="Settings" /></ListItemButton></ListItem>
         <ListItem disablePadding><ListItemButton><ListItemIcon><HelpIcon /></ListItemIcon><ListItemText primary="Help & Support" /></ListItemButton></ListItem>
       </List>
 

@@ -5,7 +5,7 @@ import { getAuth } from "firebase/auth";
 
 // ✅ 你的项目配置
 const firebaseConfig = {
-  apiKey: "AIzaSyBk8Fg-LYh36j0dXFBJUMuCXS4Zh5XmJYA",
+  apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "sss-frontend-ui.firebaseapp.com",
   projectId: "sss-frontend-ui",
   storageBucket: "sss-frontend-ui.appspot.com",
