@@ -41,8 +41,7 @@ const handleLogin = async (e: React.FormEvent) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Login successful message
-    alert(`Welcome back, ${user.email}!`);
+    // Login successful - log to console only
     console.log("User info:", user);
     
     // Navigate to home page after successful login
