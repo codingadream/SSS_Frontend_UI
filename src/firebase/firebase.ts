@@ -5,13 +5,13 @@ import { getAuth } from "firebase/auth";
 
 // ✅ 你的项目配置
 const firebaseConfig = {
-  apiKey: "AIzaSyBk8Fg-LYh36j0dXFBJUMuCXS4Zh5XmJYA",
-  authDomain: "sss-frontend-ui.firebaseapp.com",
-  projectId: "sss-frontend-ui",
-  storageBucket: "sss-frontend-ui.appspot.com",
-  messagingSenderId: "568331976575",
-  appId: "1:568331976575:web:7817eb1c886841654a644a",
-  measurementId: "G-29K58PYTRR",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // ✅ 初始化 Firebase 应用

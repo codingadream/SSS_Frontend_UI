@@ -15,9 +15,12 @@
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
     "@mui/system": "^7.3.3",
+    "axios": "^1.12.2",
+    "dotenv": "^17.2.3",
     "firebase": "^12.4.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-plaid-link": "^4.1.1",
     "react-router-dom": "^7.9.4"
   },
   "devDependencies": {
