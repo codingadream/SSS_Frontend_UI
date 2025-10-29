@@ -29,6 +29,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   AccountBalance as AccountBalanceIcon,
   Add as AddIcon,
+  BarChart as BarChartIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { signOut } from "firebase/auth";
@@ -53,6 +54,7 @@ const mockTransactions: Transaction[] = [
 
 const HomePage: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -67,6 +69,17 @@ const HomePage: React.FC = () => {
   };
 
   const totalBalance = mockAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+
+  // 生成支出概览数据（基于月份）
+  const spendingData = [
+    { month: "Jul", spending: 3200, limit: 5000 },
+    { month: "Aug", spending: 4100, limit: 5000 },
+    { month: "Sep", spending: 3800, limit: 5000 },
+    { month: "Oct", spending: 2850, limit: 5000 },
+  ];
+  
+  // 计算最大高度用于比例缩放
+  const maxSpending = Math.max(...spendingData.map(d => d.spending), 5000);
 
   const quickActions: QuickAction[] = [
     { id: "1", title: "Analytics", icon: <TrendingUpIcon sx={{ fontSize: 36, color: "#009688" }} />, route: "/analytics" },
@@ -85,12 +98,25 @@ const HomePage: React.FC = () => {
 
   // 侧边栏 Drawer
   const drawer = (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <Box 
+      sx={{ 
+        height: "100%", 
+        display: "flex", 
+        flexDirection: "column",
+        background: "linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)",
+        backgroundImage: "radial-gradient(circle at 20% 50%, rgba(0, 121, 107, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(77, 182, 172, 0.05) 0%, transparent 50%)",
+      }}
+    >
       <Toolbar sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
         <Box
           sx={{
             width: 40, height: 40, borderRadius: "50%", bgcolor: "#00796B",
             display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              transform: "scale(1.1)",
+              boxShadow: "0 4px 12px rgba(0, 121, 107, 0.3)",
+            },
           }}
         >
           <AccountBalanceIcon sx={{ color: "white" }} />
@@ -101,37 +127,149 @@ const HomePage: React.FC = () => {
       </Toolbar>
 
       <Divider />
-      <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary" }}>Menu</Typography>
+      <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600 }}>Menu</Typography>
       <List>
         <ListItem disablePadding>
-          <ListItemButton selected sx={{ bgcolor: "#E0F2F1" }}>
+          <ListItemButton 
+            selected 
+            sx={{ 
+              bgcolor: "#E0F2F1",
+              borderRadius: 1,
+              mx: 1.5,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                bgcolor: "#B2DFDB",
+                transform: "translateX(4px)",
+                boxShadow: "0 2px 8px rgba(0, 121, 107, 0.15)",
+              },
+              "&.Mui-selected": {
+                bgcolor: "#E0F2F1",
+                "&:hover": {
+                  bgcolor: "#B2DFDB",
+                },
+              },
+            }}
+          >
             <ListItemIcon><DashboardIcon sx={{ color: "#00796B" }} /></ListItemIcon>
             <ListItemText primary="Dashboard" />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/transactions")}>
+          <ListItemButton 
+            onClick={() => navigate("/transactions")}
+            sx={{
+              borderRadius: 1,
+              mx: 1.5,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                bgcolor: "#E0F2F1",
+                transform: "translateX(4px)",
+                boxShadow: "0 2px 8px rgba(0, 121, 107, 0.15)",
+                "& .MuiListItemIcon-root": {
+                  color: "#00796B",
+                },
+              },
+            }}
+          >
             <ListItemIcon><SwapHorizIcon /></ListItemIcon>
             <ListItemText primary="Transactions" />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton><ListItemIcon><TrendingUpIcon /></ListItemIcon><ListItemText primary="Analytics" /></ListItemButton>
+          <ListItemButton
+            sx={{
+              borderRadius: 1,
+              mx: 1.5,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                bgcolor: "#E0F2F1",
+                transform: "translateX(4px)",
+                boxShadow: "0 2px 8px rgba(0, 121, 107, 0.15)",
+                "& .MuiListItemIcon-root": {
+                  color: "#00796B",
+                },
+              },
+            }}
+          >
+            <ListItemIcon><TrendingUpIcon /></ListItemIcon>
+            <ListItemText primary="Analytics" />
+          </ListItemButton>
         </ListItem>
       </List>
 
       <Divider />
-      <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary" }}>Other</Typography>
+      <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600 }}>Other</Typography>
       <List>
+        <ListItem disablePadding>
+          <ListItemButton
+            sx={{
+              borderRadius: 1,
+              mx: 1.5,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                bgcolor: "#E0F2F1",
+                transform: "translateX(4px)",
+                boxShadow: "0 2px 8px rgba(0, 121, 107, 0.15)",
+                "& .MuiListItemIcon-root": {
+                  color: "#00796B",
+                },
+              },
+            }}
+          >
+            <ListItemIcon><SettingsIcon /></ListItemIcon>
+            <ListItemText primary="Settings" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            sx={{
+              borderRadius: 1,
+              mx: 1.5,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                bgcolor: "#E0F2F1",
+                transform: "translateX(4px)",
+                boxShadow: "0 2px 8px rgba(0, 121, 107, 0.15)",
+                "& .MuiListItemIcon-root": {
+                  color: "#00796B",
+                },
+              },
+            }}
+          >
+            <ListItemIcon><HelpIcon /></ListItemIcon>
+            <ListItemText primary="Help & Support" />
+          </ListItemButton>
+        </ListItem>
         <ListItem disablePadding><ListItemButton onClick={() => navigate("/settings-nav")}><ListItemIcon><SettingsIcon /></ListItemIcon><ListItemText primary="Settings" /></ListItemButton></ListItem>
         <ListItem disablePadding><ListItemButton><ListItemIcon><HelpIcon /></ListItemIcon><ListItemText primary="Help & Support" /></ListItemButton></ListItem>
       </List>
 
       <Box sx={{ mt: "auto", p: 2 }}>
-        <Card sx={{ bgcolor: "#F1F1F1", borderRadius: 2 }}>
+        <Card 
+          sx={{ 
+            bgcolor: "#ffffff",
+            borderRadius: 2,
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+            border: "1px solid rgba(0, 121, 107, 0.1)",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              boxShadow: "0 4px 16px rgba(0, 121, 107, 0.2)",
+              transform: "translateY(-2px)",
+              borderColor: "rgba(0, 121, 107, 0.2)",
+            },
+          }}
+        >
           <CardContent>
             <Box display="flex" alignItems="center" gap={2}>
-              <Avatar sx={{ bgcolor: "#00796B" }}>{currentUser?.email?.[0].toUpperCase() || "J"}</Avatar>
+              <Avatar 
+                sx={{ 
+                  bgcolor: "#00796B",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer",
+                }}
+              >
+                {currentUser?.email?.[0].toUpperCase() || "J"}
+              </Avatar>
               <Box flex={1}>
                 <Typography variant="subtitle2" fontWeight={600}>{currentUser?.displayName || "John Doe"}</Typography>
                 <Typography variant="caption" color="text.secondary">{currentUser?.email || "john.doe@email.com"}</Typography>
@@ -295,27 +433,218 @@ const HomePage: React.FC = () => {
             {/* Bottom Section */}
             <Grid container spacing={3}>
               <Grid size={{xs:12, md:6} }>
-                <Card sx={{ borderRadius: 3 }}>
+                <Card 
+                  sx={{ 
+                    borderRadius: 3,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                >
                   <CardContent>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
-                      Spending Overview
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, height: 200 }}>
-                      {[{ h: "60%" }, { h: "45%" }, { h: "80%" }].map((b, i) => (
-                        <Box key={i} sx={{ flex: 1, textAlign: "center" }}>
-                          <Box
-                            sx={{
-                              height: b.h,
-                              bgcolor: i === 2 ? "#00796B" : "#4DB6AC",
-                              borderRadius: 1,
-                              mb: 1,
-                            }}
-                          />
-                          <Typography variant="caption" color="text.secondary">
-                            ${[600, 450, 500][i]}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+                      <BarChartIcon sx={{ color: "#00796B", fontSize: 28 }} />
+                      <Typography variant="h6" fontWeight={600}>
+                        Spending Overview
+                      </Typography>
+                    </Box>
+
+                    {/* 简洁的图表设计 */}
+                    <Box sx={{ width: "100%" }}>
+                      {/* 顶部：限额线标识 */}
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                        <Typography variant="caption" sx={{ fontSize: "10px", color: "text.secondary" }}>
+                          Monthly Limit: $5,000
+                        </Typography>
+                        {spendingData.some(d => d.spending > d.limit) && (
+                          <Typography variant="caption" sx={{ fontSize: "10px", color: "#E57373", fontWeight: 600 }}>
+                            Over Limit Detected
+                          </Typography>
+                        )}
+                      </Box>
+
+                      {/* 图表区域 */}
+                      <Box 
+                        sx={{ 
+                          display: "flex", 
+                          alignItems: "flex-end", 
+                          gap: 3, 
+                          height: 220,
+                          position: "relative",
+                          pb: 4,
+                          borderBottom: "2px solid #eee",
+                          mb: 2,
+                        }}
+                      >
+                        {/* 限额参考线 - 在背景层 */}
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: (spendingData[0].limit / maxSpending) * 220,
+                            borderTop: "2px dashed rgba(255, 107, 107, 0.5)",
+                            zIndex: 0,
+                            pointerEvents: "none",
+                          }}
+                        />
+
+                        {/* 柱状图 */}
+                        {spendingData.map((data, i) => {
+                          const barHeight = (data.spending / maxSpending) * 220;
+                          const percentage = Math.round((data.spending / data.limit) * 100);
+                          const isOverLimit = data.spending > data.limit;
+                          const barColor = isOverLimit 
+                            ? "#E57373" 
+                            : percentage > 80 
+                            ? "#FFB74D" 
+                            : "#4DB6AC";
+
+                          return (
+                            <Box 
+                              key={i} 
+                              sx={{ 
+                                flex: 1, 
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "flex-end",
+                                height: "100%",
+                                position: "relative",
+                                zIndex: 2,
+                              }}
+                            >
+                              {/* Tooltip */}
+                              {hoveredBar === i && (
+                                <Box
+                                  sx={{
+                                    position: "absolute",
+                                    bottom: barHeight + 50,
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    bgcolor: "#333",
+                                    color: "white",
+                                    px: 1.5,
+                                    py: 1,
+                                    borderRadius: 1,
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    zIndex: 20,
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                                    mb: 1,
+                                    textAlign: "center",
+                                    minWidth: 100,
+                                    "&::after": {
+                                      content: '""',
+                                      position: "absolute",
+                                      bottom: -6,
+                                      left: "50%",
+                                      transform: "translateX(-50%)",
+                                      width: 0,
+                                      height: 0,
+                                      borderLeft: "6px solid transparent",
+                                      borderRight: "6px solid transparent",
+                                      borderTop: "6px solid #333",
+                                    },
+                                  }}
+                                >
+                                  <Box component="div" sx={{ display: "block", lineHeight: 1.4 }}>
+                                    ${data.spending.toLocaleString()}
+                                  </Box>
+                                  <Box component="div" sx={{ fontSize: "10px", opacity: 0.9, mt: 0.25 }}>
+                                    {percentage}% of limit
+                                  </Box>
+                                </Box>
+                              )}
+
+                              {/* 数值显示在柱子顶部 */}
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  mb: 0.5,
+                                  color: isOverLimit ? "#E57373" : percentage > 80 ? "#FFB74D" : barColor,
+                                }}
+                              >
+                                ${Math.round(data.spending / 100) / 10}K
+                              </Typography>
+
+                              {/* 柱状条 */}
+                              <Box
+                                sx={{
+                                  width: "100%",
+                                  minHeight: 8,
+                                  height: `${barHeight}px`,
+                                  bgcolor: barColor,
+                                  borderRadius: "8px 8px 0 0",
+                                  position: "relative",
+                                  transition: "all 0.3s ease",
+                                  cursor: "pointer",
+                                  boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                                  "&:hover": {
+                                    transform: "translateY(-4px) scale(1.05)",
+                                    boxShadow: `0 8px 20px ${barColor}60`,
+                                  },
+                                }}
+                                onMouseEnter={() => setHoveredBar(i)}
+                                onMouseLeave={() => setHoveredBar(null)}
+                              />
+
+                              {/* 月份和百分比 */}
+                              <Box sx={{ mt: 1.5, textAlign: "center", width: "100%" }}>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    fontWeight: 600, 
+                                    display: "block",
+                                    color: "text.primary",
+                                    fontSize: "12px",
+                                    mb: 0.25,
+                                  }}
+                                >
+                                  {data.month}
+                                </Typography>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    fontSize: "10px",
+                                    color: isOverLimit ? "#E57373" : percentage > 80 ? "#FFB74D" : "text.secondary",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {percentage}%
+                                </Typography>
+                              </Box>
+                            </Box>
+                          );
+                        })}
+                      </Box>
+
+                      {/* 简化的图例 */}
+                      <Box sx={{ display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap", mt: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Box sx={{ width: 14, height: 14, bgcolor: "#4DB6AC", borderRadius: "4px" }} />
+                          <Typography variant="caption" sx={{ fontSize: "11px", color: "text.secondary" }}>
+                            Normal
                           </Typography>
                         </Box>
-                      ))}
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Box sx={{ width: 14, height: 14, bgcolor: "#FFB74D", borderRadius: "4px" }} />
+                          <Typography variant="caption" sx={{ fontSize: "11px", color: "text.secondary" }}>
+                            Warning (80%+)
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Box sx={{ width: 14, height: 14, bgcolor: "#E57373", borderRadius: "4px" }} />
+                          <Typography variant="caption" sx={{ fontSize: "11px", color: "text.secondary" }}>
+                            Over Limit
+                          </Typography>
+                        </Box>
+                      </Box>
                     </Box>
                   </CardContent>
                 </Card>
