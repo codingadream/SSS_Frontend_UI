@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   Box,
   Typography,
@@ -22,26 +22,32 @@ import {
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase.ts";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { UserContext } from '../App.tsx';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const userContext = useContext(UserContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
 
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
 
   try {
     // Sign in with email and password using Firebase
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-
-    // Login successful - log to console only
+    console.log("User info:", user);
+    const token = await user.getIdToken();
+    userContext?.setFbToken(token);
+    // Login successful message
+    alert(`Welcome back, ${user.email}!`);
     console.log("User info:", user);
     
     // Navigate to home page after successful login
@@ -153,10 +159,10 @@ const handleLogin = async (e: React.FormEvent) => {
     }}
   >
     <Typography variant="h6" sx={{ color: "#1b6d6a", mb: 1 }}>
-      Smart Transfers
+      Seamless Bank Integration
     </Typography>
     <Typography variant="body2" color="text.secondary">
-      Send money instantly and securely
+      Direct bank account link
     </Typography>
   </Box>
 
@@ -173,7 +179,7 @@ const handleLogin = async (e: React.FormEvent) => {
     }}
   >
     <Typography variant="h6" sx={{ color: "#1b6d6a", mb: 1 }}>
-      AI Budget Coach
+      AI Budgeting Insights
     </Typography>
     <Typography variant="body2" color="text.secondary">
       Personalized guidance for smarter spending
@@ -193,10 +199,10 @@ const handleLogin = async (e: React.FormEvent) => {
     }}
   >
     <Typography variant="h6" sx={{ color: "#1b6d6a", mb: 1 }}>
-      Data Insights
+      Data Filtering
     </Typography>
     <Typography variant="body2" color="text.secondary">
-      Automatic reports and trends
+      Track your data by month or week
     </Typography>
   </Box>
 
@@ -290,8 +296,8 @@ const handleLogin = async (e: React.FormEvent) => {
                   {/* Forgot Password Link */}
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
                   <Link component={RouterLink} to="/forgot-password" variant="body2" sx={{ color: "#1b6d6a" }}>
-  Forgot password?
-</Link>
+                    Forgot password?
+                  </Link>
                   </Box>
 
                   {/* Sign In Button */}
@@ -349,5 +355,6 @@ const handleLogin = async (e: React.FormEvent) => {
         </Container>
       </Box>
     </Box>
+
   );
 }
