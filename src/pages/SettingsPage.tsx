@@ -13,7 +13,7 @@ export default function SettingPage() {
 
   const [linkToken, setLinkToken] = useState(null);
   const generateToken = async () => {
-    const response = await fetch(`${process.env.BASE_URL}api/create_link_token`, {
+    const response = await fetch(`${import.meta.env.VITE_BASE_URL}api/create_link_token`, {
     method: 'POST',
     headers: {
         'Authorization': `Bearer ${userContext?.fbToken}`,
