@@ -110,7 +110,10 @@ const HomePage: React.FC = () => {
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton><ListItemIcon><SwapHorizIcon /></ListItemIcon><ListItemText primary="Transactions" /></ListItemButton>
+          <ListItemButton onClick={() => navigate("/transactions")}>
+            <ListItemIcon><SwapHorizIcon /></ListItemIcon>
+            <ListItemText primary="Transactions" />
+          </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton><ListItemIcon><TrendingUpIcon /></ListItemIcon><ListItemText primary="Analytics" /></ListItemButton>

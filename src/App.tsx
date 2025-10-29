@@ -12,6 +12,7 @@ import HomePage from "./pages/HomePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import SettingsPage from "./pages/SettingsPage";
 import { useState, createContext, type Dispatch, type SetStateAction } from "react";
+import TransactionsPage from "./pages/TransactionsPage";
 
 interface IUserContext {
   fbToken: string | null;
@@ -35,6 +36,8 @@ const [fbToken, setFbToken] = useState<string | null>(null);
             <Route path="/home" element={<HomePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+          
           </Routes>
         </Router>
       </UserContext.Provider>

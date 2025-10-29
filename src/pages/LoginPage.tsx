@@ -39,29 +39,27 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      // Sign in with email and password using Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+  try {
+    // Sign in with email and password using Firebase
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    console.log("User info:", user);
+    const token = await user.getIdToken();
+    userContext?.setFbToken(token);
+    // Login successful message
+    alert(`Welcome back, ${user.email}!`);
+    console.log("User info:", user);
+    
+    // Navigate to home page after successful login
+    navigate('/home');
+  } catch (error) {
+    // Show error on login failure
+    console.error("Login error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    alert("Login failed: " + errorMessage);
+  }
+};
 
-      
-
-      // Login successful message
-      alert(`Welcome back, ${user.email}!`);
-      console.log("User info:", user);
-      const token = await user.getIdToken();
-      userContext?.setFbToken(token);
-      
-      
-      // Navigate to home page after successful login
-      navigate('/home');
-    } catch (error) {
-      // Show error on login failure
-      console.error("Login error:", error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      alert("Login failed: " + errorMessage);
-    }
-  };
 
   return (
     <Box sx={{ 
