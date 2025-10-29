@@ -235,10 +235,10 @@ const TransactionsPage: React.FC = () => {
         >
           <Box sx={{ maxWidth: "1800px", mx: "auto", width: "100%" }}>
             {/* Header */}
-            <Typography variant="h4" fontWeight={700} gutterBottom>
+            <Typography variant="h4" fontWeight={700} gutterBottom sx={{ color: 'black' }}>
               Transaction History
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4, color:"black" }}>
               View and manage all your transactions
             </Typography>
 
@@ -271,7 +271,7 @@ const TransactionsPage: React.FC = () => {
               <Grid size={{xs:12, md:4}}>
                 <Card sx={{ borderRadius: 3, bgcolor: "#F1F1F1" }}>
                   <CardContent>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Typography variant="body2" color="text.secondary" gutterBottom sx={{ color: 'black' }}>
                       Total Transactions
                     </Typography>
                     <Typography variant="h4" fontWeight={700} color="#4CAF50">
@@ -283,7 +283,7 @@ const TransactionsPage: React.FC = () => {
               <Grid size={{xs:12, md:4}}>
                 <Card sx={{ borderRadius: 3, bgcolor: "#F1F1F1" }}>
                   <CardContent>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Typography variant="body2" color="text.secondary" gutterBottom sx={{ color: 'black' }}>
                       Total Spent
                     </Typography>
                     <Typography variant="h4" fontWeight={700} color="text.primary">
@@ -295,7 +295,7 @@ const TransactionsPage: React.FC = () => {
               <Grid size={{xs:12, md:4}}>
                 <Card sx={{ borderRadius: 3, bgcolor: "#E8F5E9" }}>
                   <CardContent>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <Typography variant="body2" color="text.secondary" gutterBottom sx={{ color: 'black' }}>
                       Total Income
                     </Typography>
                     <Typography variant="h4" fontWeight={700} color="#4CAF50">
@@ -307,7 +307,7 @@ const TransactionsPage: React.FC = () => {
             </Grid>
 
             {/* Transactions List */}
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
+            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2, color: 'black'   }}>
               All Transactions
             </Typography>
             <Card sx={{ borderRadius: 3 }}>

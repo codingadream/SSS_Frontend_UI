@@ -159,10 +159,10 @@ export default function LoginPage() {
     }}
   >
     <Typography variant="h6" sx={{ color: "#1b6d6a", mb: 1 }}>
-      Smart Transfers
+      Seamless Bank Integration
     </Typography>
     <Typography variant="body2" color="text.secondary">
-      Send money instantly and securely
+      Direct bank account link
     </Typography>
   </Box>
 
@@ -179,7 +179,7 @@ export default function LoginPage() {
     }}
   >
     <Typography variant="h6" sx={{ color: "#1b6d6a", mb: 1 }}>
-      AI Budget Coach
+      AI Budgeting Insights
     </Typography>
     <Typography variant="body2" color="text.secondary">
       Personalized guidance for smarter spending
@@ -199,10 +199,10 @@ export default function LoginPage() {
     }}
   >
     <Typography variant="h6" sx={{ color: "#1b6d6a", mb: 1 }}>
-      Data Insights
+      Data Filtering
     </Typography>
     <Typography variant="body2" color="text.secondary">
-      Automatic reports and trends
+      Track your data by month or week
     </Typography>
   </Box>
 

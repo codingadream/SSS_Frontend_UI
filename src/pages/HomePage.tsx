@@ -123,7 +123,7 @@ const HomePage: React.FC = () => {
       <Divider />
       <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary" }}>Other</Typography>
       <List>
-        <ListItem disablePadding><ListItemButton onClick={() => navigate("/settings")}><ListItemIcon><SettingsIcon /></ListItemIcon><ListItemText primary="Settings" /></ListItemButton></ListItem>
+        <ListItem disablePadding><ListItemButton onClick={() => navigate("/settings-nav")}><ListItemIcon><SettingsIcon /></ListItemIcon><ListItemText primary="Settings" /></ListItemButton></ListItem>
         <ListItem disablePadding><ListItemButton><ListItemIcon><HelpIcon /></ListItemIcon><ListItemText primary="Help & Support" /></ListItemButton></ListItem>
       </List>
 
@@ -225,11 +225,11 @@ const HomePage: React.FC = () => {
   
             {/* Total Balance */}
             <Box sx={{ my: 3 }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'black' }}>
                 Total Balance
               </Typography>
               <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="h3" fontWeight={700}>
+                <Typography variant="h3" fontWeight={700} sx={{ color: 'black' }}>
                   ${totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </Typography>
                 <VisibilityIcon sx={{ color: "text.secondary" }} />
@@ -265,7 +265,7 @@ const HomePage: React.FC = () => {
             </Grid>
   
             {/* Quick Actions */}
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: 'black' }}>
               Quick Actions
             </Typography>
             <Grid container spacing={3} sx={{ mb: 5 }}>
