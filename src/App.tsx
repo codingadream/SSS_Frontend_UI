@@ -10,9 +10,8 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import HomePage from "./pages/HomePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import SettingsPage from "./pages/SettingsPage";
 import SettingsPageNav from "./pages/SettingsPageNav";
-import { useState, createContext, type Dispatch, type SetStateAction } from "react";
+import { useState, createContext, type Dispatch, type SetStateAction, useEffect } from "react";
 import TransactionsPage from "./pages/TransactionsPage";
 
 
@@ -26,7 +25,20 @@ export const UserContext = createContext<IUserContext | null>(null);
 
 function App() {
   
-const [fbToken, setFbToken] = useState<string | null>(null);
+const [fbToken, setFbToken] = useState<string | null>(() => {
+    const savedToken = localStorage.getItem('fbToken');
+    return savedToken ? savedToken : null;
+  });
+
+  useEffect(() => {
+    if (fbToken) {
+      localStorage.setItem('fbToken', fbToken);
+    } else {
+      // Clean up if the token is null (user logged out)
+      localStorage.removeItem('fbToken');
+    }
+  }, [fbToken]);
+  
   return (
     <AuthProvider>
       <UserContext.Provider value={{ fbToken: fbToken, setFbToken: setFbToken }}>
@@ -37,7 +49,6 @@ const [fbToken, setFbToken] = useState<string | null>(null);
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/settings-nav" element={<SettingsPageNav />} />
 
