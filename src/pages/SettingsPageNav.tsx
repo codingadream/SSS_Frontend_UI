@@ -1,5 +1,5 @@
 // src/pages/SettingsPageNav.tsx
-import React, { useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -26,13 +26,14 @@ import {
   Mail as MailIcon,
   Lock as LockIcon,
   CreditCard as CreditCardIcon,
-  Add as AddIcon,
   Delete as DeleteIcon,
   CameraAlt as CameraAltIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
+import { usePlaidLink } from "react-plaid-link";
+import { UserContext } from "../App";
 
 type BankAccount = {
   id: string;
@@ -42,6 +43,24 @@ type BankAccount = {
 };
 
 const SettingsPageNav: React.FC = () => {
+  const userContext = useContext(UserContext);
+  const [linkToken, setLinkToken] = useState(null);
+  const generateToken = async () => {
+    const response = await fetch(
+      `${import.meta.env.VITE_BASE_URL}api/create_link_token`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${userContext?.fbToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const data = await response.json();
+    setLinkToken(data);
+    console.log(data);
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentUser } = useAuth();
 
@@ -52,7 +71,9 @@ const SettingsPageNav: React.FC = () => {
   const [lastName, setLastName] = useState<string>(
     currentUser?.displayName?.split(" ").slice(1).join(" ") || "Doe"
   );
-  const [email, setEmail] = useState<string>(currentUser?.email || "john.doe@email.com");
+  const [email, setEmail] = useState<string>(
+    currentUser?.email || "john.doe@email.com"
+  );
   const [profileImage, setProfileImage] = useState<string>("");
 
   // --- Password state ---
@@ -70,8 +91,18 @@ const SettingsPageNav: React.FC = () => {
 
   // --- Bank accounts ---
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([
-    { id: "1", accountName: "Primary Checking", accountNumber: "****4829", routingNumber: "021000021" },
-    { id: "2", accountName: "Savings Account", accountNumber: "****7392", routingNumber: "021000021" },
+    {
+      id: "1",
+      accountName: "Primary Checking",
+      accountNumber: "****4829",
+      routingNumber: "021000021",
+    },
+    {
+      id: "2",
+      accountName: "Savings Account",
+      accountNumber: "****7392",
+      routingNumber: "021000021",
+    },
   ]);
   const [isAddBankDialogOpen, setIsAddBankDialogOpen] = useState(false);
   const [newAccountName, setNewAccountName] = useState("");
@@ -80,7 +111,11 @@ const SettingsPageNav: React.FC = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // --- Notifications ---
-  const [snack, setSnack] = useState<{ open: boolean; msg: string; sev: "success" | "error" | "info" | "warning" }>({
+  const [snack, setSnack] = useState<{
+    open: boolean;
+    msg: string;
+    sev: "success" | "error" | "info" | "warning";
+  }>({
     open: false,
     msg: "",
     sev: "success",
@@ -107,8 +142,10 @@ const SettingsPageNav: React.FC = () => {
   };
 
   const handlePasswordReset = () => {
-    if (newPassword !== confirmPassword) return openSnack("New passwords do not match", "error");
-    if (newPassword.length < 8) return openSnack("Password must be at least 8 characters", "error");
+    if (newPassword !== confirmPassword)
+      return openSnack("New passwords do not match", "error");
+    if (newPassword.length < 8)
+      return openSnack("Password must be at least 8 characters", "error");
     // TODO: call Firebase reauthenticate + updatePassword
     setCurrentPassword("");
     setNewPassword("");
@@ -117,7 +154,8 @@ const SettingsPageNav: React.FC = () => {
   };
 
   const handleEmailChange = () => {
-    if (!newEmail.includes("@")) return openSnack("Enter a valid email address", "error");
+    if (!newEmail.includes("@"))
+      return openSnack("Enter a valid email address", "error");
     // TODO: call Firebase reauthenticate + updateEmail
     setEmail(newEmail);
     setIsEmailDialogOpen(false);
@@ -151,8 +189,19 @@ const SettingsPageNav: React.FC = () => {
     openSnack("Bank account removed.", "success");
   };
 
+  useEffect(() => {
+    generateToken();
+  }, []);
+
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#F9FAFB", px: { xs: 3, sm: 5, md: 8 }, py: 4 }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "#F9FAFB",
+        px: { xs: 3, sm: 5, md: 8 },
+        py: 4,
+      }}
+    >
       <Box sx={{ maxWidth: 1200, mx: "auto" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
           <SettingsIcon sx={{ color: "#00695C" }} />
@@ -170,7 +219,9 @@ const SettingsPageNav: React.FC = () => {
             title={
               <Box display="flex" alignItems="center" gap={1}>
                 <PersonIcon sx={{ color: "#00695C" }} />
-                <Typography variant="h6" fontWeight={700}>Personal Information</Typography>
+                <Typography variant="h6" fontWeight={700}>
+                  Personal Information
+                </Typography>
               </Box>
             }
             subheader="Update your name and personal details"
@@ -180,7 +231,13 @@ const SettingsPageNav: React.FC = () => {
               <Box sx={{ position: "relative" }}>
                 <Avatar
                   src={profileImage || undefined}
-                  sx={{ width: 96, height: 96, bgcolor: "#E0F2F1", color: "#00695C", fontSize: 32 }}
+                  sx={{
+                    width: 96,
+                    height: 96,
+                    bgcolor: "#E0F2F1",
+                    color: "#00695C",
+                    fontSize: 32,
+                  }}
                 >
                   {(firstName?.[0] || "J").toUpperCase()}
                   {(lastName?.[0] || "D").toUpperCase()}
@@ -221,7 +278,12 @@ const SettingsPageNav: React.FC = () => {
                   onClick={handleProfileImageClick}
                   size="small"
                   variant="outlined"
-                  sx={{ mt: 1.5, borderColor: "#00695C", color: "#00695C", "&:hover": { bgcolor: "#E0F2F1" } }}
+                  sx={{
+                    mt: 1.5,
+                    borderColor: "#00695C",
+                    color: "#00695C",
+                    "&:hover": { bgcolor: "#E0F2F1" },
+                  }}
                 >
                   Change Photo
                 </Button>
@@ -263,7 +325,9 @@ const SettingsPageNav: React.FC = () => {
             title={
               <Box display="flex" alignItems="center" gap={1}>
                 <MailIcon sx={{ color: "#00695C" }} />
-                <Typography variant="h6" fontWeight={700}>Email Address</Typography>
+                <Typography variant="h6" fontWeight={700}>
+                  Email Address
+                </Typography>
               </Box>
             }
             subheader="Change the email address associated with your account"
@@ -271,13 +335,22 @@ const SettingsPageNav: React.FC = () => {
           <CardContent>
             <Grid container spacing={2} alignItems="center">
               <Grid size={{ xs: 12, md: 6 }}>
-                <TextField label="Current Email" value={email} disabled fullWidth />
+                <TextField
+                  label="Current Email"
+                  value={email}
+                  disabled
+                  fullWidth
+                />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Button
                   variant="outlined"
                   onClick={() => setIsEmailDialogOpen(true)}
-                  sx={{ borderColor: "#00695C", color: "#00695C", "&:hover": { bgcolor: "#E0F2F1" } }}
+                  sx={{
+                    borderColor: "#00695C",
+                    color: "#00695C",
+                    "&:hover": { bgcolor: "#E0F2F1" },
+                  }}
                 >
                   Change Email Address
                 </Button>
@@ -292,7 +365,9 @@ const SettingsPageNav: React.FC = () => {
             title={
               <Box display="flex" alignItems="center" gap={1}>
                 <LockIcon sx={{ color: "#00695C" }} />
-                <Typography variant="h6" fontWeight={700}>Password</Typography>
+                <Typography variant="h6" fontWeight={700}>
+                  Password
+                </Typography>
               </Box>
             }
             subheader="Change your password to keep your account secure"
@@ -308,8 +383,14 @@ const SettingsPageNav: React.FC = () => {
                   fullWidth
                   InputProps={{
                     endAdornment: (
-                      <IconButton onClick={() => setShowCurrentPassword((s) => !s)}>
-                        {showCurrentPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      <IconButton
+                        onClick={() => setShowCurrentPassword((s) => !s)}
+                      >
+                        {showCurrentPassword ? (
+                          <VisibilityOffIcon />
+                        ) : (
+                          <VisibilityIcon />
+                        )}
                       </IconButton>
                     ),
                   }}
@@ -330,7 +411,11 @@ const SettingsPageNav: React.FC = () => {
                   InputProps={{
                     endAdornment: (
                       <IconButton onClick={() => setShowNewPassword((s) => !s)}>
-                        {showNewPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        {showNewPassword ? (
+                          <VisibilityOffIcon />
+                        ) : (
+                          <VisibilityIcon />
+                        )}
                       </IconButton>
                     ),
                   }}
@@ -345,8 +430,14 @@ const SettingsPageNav: React.FC = () => {
                   fullWidth
                   InputProps={{
                     endAdornment: (
-                      <IconButton onClick={() => setShowConfirmPassword((s) => !s)}>
-                        {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      <IconButton
+                        onClick={() => setShowConfirmPassword((s) => !s)}
+                      >
+                        {showConfirmPassword ? (
+                          <VisibilityOffIcon />
+                        ) : (
+                          <VisibilityIcon />
+                        )}
                       </IconButton>
                     ),
                   }}
@@ -370,19 +461,14 @@ const SettingsPageNav: React.FC = () => {
             title={
               <Box display="flex" alignItems="center" gap={1}>
                 <CreditCardIcon sx={{ color: "#00695C" }} />
-                <Typography variant="h6" fontWeight={700}>Bank Accounts</Typography>
+                <Typography variant="h6" fontWeight={700}>
+                  Bank Accounts
+                </Typography>
               </Box>
             }
             subheader="Manage your linked bank accounts"
             action={
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setIsAddBankDialogOpen(true)}
-                sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
-              >
-                Add Account
-              </Button>
+              <PlaidLink linkToken={linkToken} />
             }
           />
           <CardContent>
@@ -421,7 +507,9 @@ const SettingsPageNav: React.FC = () => {
               ))}
 
               {bankAccounts.length === 0 && (
-                <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
+                <Box
+                  sx={{ textAlign: "center", py: 4, color: "text.secondary" }}
+                >
                   No bank accounts linked. Add one to get started.
                 </Box>
               )}
@@ -431,7 +519,12 @@ const SettingsPageNav: React.FC = () => {
       </Box>
 
       {/* Change Email Dialog */}
-      <Dialog open={isEmailDialogOpen} onClose={() => setIsEmailDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog
+        open={isEmailDialogOpen}
+        onClose={() => setIsEmailDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle>Change Email Address</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -455,15 +548,29 @@ const SettingsPageNav: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsEmailDialogOpen(false)} variant="outlined">Cancel</Button>
-          <Button onClick={handleEmailChange} variant="contained" sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}>
+          <Button
+            onClick={() => setIsEmailDialogOpen(false)}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleEmailChange}
+            variant="contained"
+            sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
+          >
             Update Email
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Add Bank Account Dialog */}
-      <Dialog open={isAddBankDialogOpen} onClose={() => setIsAddBankDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog
+        open={isAddBankDialogOpen}
+        onClose={() => setIsAddBankDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle>Add Bank Account</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -494,8 +601,17 @@ const SettingsPageNav: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsAddBankDialogOpen(false)} variant="outlined">Cancel</Button>
-          <Button onClick={handleAddBankAccount} variant="contained" sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}>
+          <Button
+            onClick={() => setIsAddBankDialogOpen(false)}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddBankAccount}
+            variant="contained"
+            sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
+          >
             Add Account
           </Button>
         </DialogActions>
@@ -506,12 +622,19 @@ const SettingsPageNav: React.FC = () => {
         <DialogTitle>Remove Bank Account</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
-            Are you sure you want to remove this bank account? This action cannot be undone.
+            Are you sure you want to remove this bank account? This action
+            cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteId(null)} variant="outlined">Cancel</Button>
-          <Button color="error" variant="contained" onClick={handleDeleteBankAccount}>
+          <Button onClick={() => setDeleteId(null)} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleDeleteBankAccount}
+          >
             Remove Account
           </Button>
         </DialogActions>
@@ -534,6 +657,49 @@ const SettingsPageNav: React.FC = () => {
         </Alert>
       </Snackbar>
     </Box>
+  );
+};
+
+interface LinkProps {
+  linkToken: string | null;
+}
+const PlaidLink: React.FC<LinkProps> = (props: LinkProps) => {
+  const { currentUser } = useAuth();
+  const userContext = useContext(UserContext);
+  const exchangeToken = async (publicToken: string) => {
+    const fbToken = await currentUser?.getIdToken();
+    const response = await fetch(
+      `${import.meta.env.VITE_BASE_URL}api/exchange_public_token`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${userContext?.fbToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ public_token: publicToken }),
+      }
+    );
+    const data = await response.json();
+    console.log(data);
+  };
+  const onSuccess = React.useCallback((public_token: string) => {
+    // send public_token to server
+    exchangeToken(public_token);
+  }, []);
+  const config: Parameters<typeof usePlaidLink>[0] = {
+    token: props.linkToken!,
+    onSuccess,
+  };
+  const { open, ready } = usePlaidLink(config);
+  return (
+    <Button
+      onClick={() => open()}
+      disabled={!ready}
+      variant="contained"
+      sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
+    >
+      Add Account
+    </Button>
   );
 };
 

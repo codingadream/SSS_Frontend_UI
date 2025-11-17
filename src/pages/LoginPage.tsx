@@ -45,6 +45,7 @@ export default function LoginPage() {
     const user = userCredential.user;
     console.log("User info:", user);
     const token = await user.getIdToken();
+    console.log("Id token: ", token);
     userContext?.setFbToken(token);
     // Login successful message
     alert(`Welcome back, ${user.email}!`);
