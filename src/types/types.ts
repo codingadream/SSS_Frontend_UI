@@ -7,12 +7,33 @@ export interface Account {
 }
 
 export interface Transaction {
-  id: string;
-  merchant: string;
-  category: string;
-  date: string;
-  amount: number;
-  type: 'debit' | 'credit';
+    transactionId: number;
+    plaidTransactionId: string;
+    plaidCategoryPrimary: string;
+    plaidCategoryDetailed: string;
+    plaidCategoryConfidenceLevel: string;
+    isPending: boolean;
+    amount: number;
+    transactionDate: string; // Treat as string for simplicity, convert to Date as needed
+    merchantName: string;
+    description: string;
+}
+
+export interface TransactionResponse {
+    transactionCount: number;
+    transactions: Transaction[];
+}
+
+export interface MonthRequest {
+    MonthYear: string | null;
+}
+
+export interface UserResponse {
+  email: string;
+  fullName: string;
+  dateOfBirth: string | null;
+  lastSyncTime: string;
+  transactionMonths: string[];
 }
 
 export interface QuickAction {

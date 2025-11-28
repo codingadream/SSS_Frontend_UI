@@ -33,7 +33,6 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { usePlaidLink } from "react-plaid-link";
-import { UserContext } from "../App";
 
 type BankAccount = {
   id: string;
@@ -43,15 +42,16 @@ type BankAccount = {
 };
 
 const SettingsPageNav: React.FC = () => {
-  const userContext = useContext(UserContext);
+  const { currentUser } = useAuth();
   const [linkToken, setLinkToken] = useState(null);
   const generateToken = async () => {
+    const token = await currentUser?.getIdToken();
     const response = await fetch(
       `${import.meta.env.VITE_BASE_URL}api/create_link_token`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${userContext?.fbToken}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       }
@@ -62,7 +62,6 @@ const SettingsPageNav: React.FC = () => {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { currentUser } = useAuth();
 
   // --- Personal info ---
   const [firstName, setFirstName] = useState<string>(
@@ -665,15 +664,14 @@ interface LinkProps {
 }
 const PlaidLink: React.FC<LinkProps> = (props: LinkProps) => {
   const { currentUser } = useAuth();
-  const userContext = useContext(UserContext);
   const exchangeToken = async (publicToken: string) => {
-    const fbToken = await currentUser?.getIdToken();
+    const token = await currentUser?.getIdToken();
     const response = await fetch(
       `${import.meta.env.VITE_BASE_URL}api/exchange_public_token`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${userContext?.fbToken}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ public_token: publicToken }),

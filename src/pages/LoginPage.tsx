@@ -22,11 +22,9 @@ import {
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase.ts";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import { UserContext } from '../App.tsx';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const userContext = useContext(UserContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -46,7 +44,6 @@ export default function LoginPage() {
     console.log("User info:", user);
     const token = await user.getIdToken();
     console.log("Id token: ", token);
-    userContext?.setFbToken(token);
     // Login successful message
     alert(`Welcome back, ${user.email}!`);
     console.log("User info:", user);
