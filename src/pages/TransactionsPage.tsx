@@ -52,7 +52,6 @@ import { auth } from "../firebase/firebase";
 import { useNavigate } from "react-router-dom";
 import type {
   MonthRequest,
-  Transaction,
   TransactionResponse,
   UserResponse,
 } from "../types/types";

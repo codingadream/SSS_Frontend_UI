@@ -24,6 +24,18 @@ export interface TransactionResponse {
     transactions: Transaction[];
 }
 
+export interface Account {
+    accountId: number;
+    accountType: string;
+    accountName: string;
+    currentBalance: string;
+    plaidMask: string;
+}
+
+export interface AccountsResponse {
+    accounts: Account[];
+}
+
 export interface MonthRequest {
     MonthYear: string | null;
 }
@@ -34,6 +46,12 @@ export interface UserResponse {
   dateOfBirth: string | null;
   lastSyncTime: string;
   transactionMonths: string[];
+}
+
+
+export interface SyncResponse {
+  message: string;
+  status: "success" | "failure";
 }
 
 export interface QuickAction {

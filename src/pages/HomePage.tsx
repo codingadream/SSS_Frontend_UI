@@ -38,6 +38,7 @@ import { useNavigate } from "react-router-dom";
 import type { Account, Transaction, QuickAction } from "../types/types";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { callSync } from "../helpers";
 
 const drawerWidth = 240;
 
@@ -150,59 +151,13 @@ const HomePage: React.FC = () => {
     }
   };
 
-  interface SyncResponse {
-    message: string;
-    status: "success" | "failure";
-  }
-
   useEffect(() => {
     if (hasRun.current) {
       return; // Already ran, so exit immediately
     }
 
     hasRun.current = true;
-    const fetchData = async () => {
-      try {
-        const token = await currentUser?.getIdToken();
-        const response = await axios.get<SyncResponse>(
-          `${import.meta.env.VITE_BASE_URL}api/sync`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-        );
-
-        // --- SUCCESS TOAST ---
-        toast.success(
-          response.data.message || "Data from Plaid synced successfully!",
-          {
-            duration: 3000,
-          }
-        );
-      } catch (err) {
-        // --- FAILURE TOAST ---
-        let errorMessage = "Synchronization failed due to a network error.";
-
-        if (axios.isAxiosError(err)) {
-          const serverMessage = (err.response?.data as any)?.message;
-          if (serverMessage) {
-            errorMessage = serverMessage;
-          } else if (err.message) {
-            errorMessage = `Request failed: ${err.message}`;
-          }
-        }
-
-        toast.error(`Sync Failed: ${errorMessage}`, {
-          duration: 3000,
-        });
-
-        console.error("API Sync Error:", errorMessage);
-      }
-    };
-
-    // Call the function when the component mounts
-    fetchData();
+    callSync(currentUser);
   }, []);
 
   // 侧边栏 Drawer
