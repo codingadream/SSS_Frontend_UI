@@ -41,6 +41,8 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updateEmail,
+  updatePassword,
+  updateProfile,
 } from "firebase/auth";
 
 const SettingsPageNav: React.FC = () => {
@@ -69,11 +71,11 @@ const SettingsPageNav: React.FC = () => {
     console.log(data);
   };
 
-  const fetchUser = async () => {
+  const fetchUser = async (force = false) => {
     setLoading(true);
 
     try {
-      const token = await currentUser?.getIdToken();
+      const token = await currentUser?.getIdToken(force);
       const response = await axios.get<UserResponse>(
         `${import.meta.env.VITE_BASE_URL}api/user`,
         {
@@ -187,21 +189,51 @@ const SettingsPageNav: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSavePersonalInfo = () => {
-    // TODO: wire to Firebase updateProfile if desired
-    openSnack("Personal information saved.", "success");
+  const handleSavePersonalInfo = async () => {
+    try {
+      await updateProfile(currentUser!, {
+        displayName: firstName + " " + lastName,
+      });
+      await fetchUser(true);
+      openSnack("Personal information saved.", "success");
+    } catch (e) {
+      setNewEmail("");
+      if (e instanceof Error) {
+        console.error(e.message);
+        openSnack("Email failed to update. " + e.message, "error");
+      } else {
+        // Fallback for non-standard errors (e.g. strings or raw objects)
+        console.error("An unexpected error occurred:", e);
+      }
+    }
   };
 
-  const handlePasswordReset = () => {
+  const handlePasswordReset = async () => {
     if (newPassword !== confirmPassword)
       return openSnack("New passwords do not match", "error");
     if (newPassword.length < 8)
       return openSnack("Password must be at least 8 characters", "error");
-    // TODO: call Firebase reauthenticate + updatePassword
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    openSnack("Password updated.", "success");
+    const credential = EmailAuthProvider.credential(
+      currentUser!.email!,
+      currentPassword
+    );
+
+    try {
+      await reauthenticateWithCredential(currentUser!, credential);
+      await updatePassword(currentUser!, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      openSnack("Password updated.", "success");
+    } catch (e) {
+      if (e instanceof Error) {
+        console.error(e.message);
+        openSnack("Password failed to update. " + e.message, "error");
+      } else {
+        // Fallback for non-standard errors (e.g. strings or raw objects)
+        console.error("An unexpected error occurred:", e);
+      }
+    }
   };
 
   const handleEmailChange = async () => {
@@ -214,8 +246,7 @@ const SettingsPageNav: React.FC = () => {
     try {
       await reauthenticateWithCredential(currentUser!, credential);
       await updateEmail(currentUser!, newEmail); //TODO verify email to enhance security, and disable email enumeration in firebase settings
-      await callSync(currentUser);
-      await fetchUser();
+      await fetchUser(true);
       setIsChangingEmail(true);
     } catch (e) {
       setNewEmail("");
@@ -307,6 +338,7 @@ const SettingsPageNav: React.FC = () => {
                   {(firstName?.[0] || "J").toUpperCase()}
                   {(lastName?.[0] || "D").toUpperCase()}
                 </Avatar>
+                {/*
                 <Tooltip title="Change photo">
                   <IconButton
                     size="small"
@@ -323,6 +355,8 @@ const SettingsPageNav: React.FC = () => {
                     <CameraAltIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
+                  */}
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -339,6 +373,8 @@ const SettingsPageNav: React.FC = () => {
                 <Typography variant="body2" color="text.secondary">
                   {email}
                 </Typography>
+                {
+                  /*
                 <Button
                   onClick={handleProfileImageClick}
                   size="small"
@@ -352,6 +388,9 @@ const SettingsPageNav: React.FC = () => {
                 >
                   Change Photo
                 </Button>
+                  */
+                }
+                
               </Box>
             </Box>
 
