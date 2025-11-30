@@ -26,26 +26,30 @@ import {
   Mail as MailIcon,
   Lock as LockIcon,
   CreditCard as CreditCardIcon,
-  Delete as DeleteIcon,
   CameraAlt as CameraAltIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  CurrencyBitcoin,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { usePlaidLink } from "react-plaid-link";
-import type { AccountsResponse, TransactionResponse, UserResponse } from "../types/types";
+import type { AccountsResponse, UserResponse } from "../types/types";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { callSync } from "../helpers";
-import { EmailAuthProvider, reauthenticateWithCredential, updateEmail } from "firebase/auth";
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updateEmail,
+} from "firebase/auth";
 
 const SettingsPageNav: React.FC = () => {
   const { currentUser } = useAuth();
   const [linkToken, setLinkToken] = useState(null);
   const [userData, setUserData] = useState<UserResponse | null>(null);
-  const [accountsData, setAccountsData] = useState<AccountsResponse | null>(null);
+  const [accountsData, setAccountsData] = useState<AccountsResponse | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
 
   const generateToken = async () => {
@@ -134,7 +138,6 @@ const SettingsPageNav: React.FC = () => {
       setLoading(false);
     }
   };
-  
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,11 +159,7 @@ const SettingsPageNav: React.FC = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [emailPassword, setEmailPassword] = useState("");
-  const [isAddBankDialogOpen, setIsAddBankDialogOpen] = useState(false);
-  const [newAccountName, setNewAccountName] = useState("");
-  const [newAccountNumber, setNewAccountNumber] = useState("");
-  const [newRoutingNumber, setNewRoutingNumber] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
 
   // --- Notifications ---
   const [snack, setSnack] = useState<{
@@ -207,16 +206,43 @@ const SettingsPageNav: React.FC = () => {
 
   const handleEmailChange = async () => {
     if (!newEmail.includes("@"))
-    return openSnack("Enter a valid email address", "error");
-    const credential = EmailAuthProvider.credential(currentUser!.email!, emailPassword);
-    await reauthenticateWithCredential(currentUser!, credential);
-    await updateEmail(currentUser!, newEmail); //TODO verify email to enhance security, and disable email enumeration in firebase settings
-    setEmail(newEmail);
+      return openSnack("Enter a valid email address", "error");
+    const credential = EmailAuthProvider.credential(
+      currentUser!.email!,
+      emailPassword
+    );
+    try {
+      await reauthenticateWithCredential(currentUser!, credential);
+      await updateEmail(currentUser!, newEmail); //TODO verify email to enhance security, and disable email enumeration in firebase settings
+      await callSync(currentUser);
+      await fetchUser();
+      setIsChangingEmail(true);
+    } catch (e) {
+      setNewEmail("");
+      if (e instanceof Error) {
+        console.error(e.message);
+        openSnack("Email failed to update. " + e.message, "error");
+      } else {
+        // Fallback for non-standard errors (e.g. strings or raw objects)
+        console.error("An unexpected error occurred:", e);
+      }
+    }
     setIsEmailDialogOpen(false);
-    setNewEmail("");
     setEmailPassword("");
-    openSnack("Email updated.", "success");
   };
+
+  useEffect(() => {
+    if (isChangingEmail) {
+      if (userData?.email == newEmail) {
+        openSnack("Email updated.", "success");
+        setNewEmail("");
+      } else {
+        openSnack("Email failed to update.", "error");
+        setNewEmail("");
+      }
+    }
+    setIsChangingEmail(false);
+  }, [isChangingEmail]);
 
   useEffect(() => {
     generateToken();
@@ -224,13 +250,13 @@ const SettingsPageNav: React.FC = () => {
     fetchAccounts();
   }, []);
 
-    useEffect(() => {
-      setFirstName(userData?.fullName?.split(" ")[0] || "John");
-      setLastName(userData?.fullName?.split(" ")[1] || "Doe");
-      setEmail(userData?.email || "john.doe@email.com")
+  useEffect(() => {
+    setFirstName(userData?.fullName?.split(" ")[0] || "John");
+    setLastName(userData?.fullName?.split(" ")[1] || "Doe");
+    setEmail(userData?.email || "john.doe@email.com");
   }, [userData]);
 
-  if(loading) return <LoadingSpinner />
+  if (loading) return <LoadingSpinner />;
 
   return (
     <Box
@@ -506,7 +532,9 @@ const SettingsPageNav: React.FC = () => {
               </Box>
             }
             subheader="Manage your linked bank accounts"
-            action={<PlaidLink linkToken={linkToken} fetchAccounts={fetchAccounts}/>}
+            action={
+              <PlaidLink linkToken={linkToken} fetchAccounts={fetchAccounts} />
+            }
           />
           <CardContent>
             <Box sx={{ display: "grid", gap: 1.5 }}>
@@ -529,9 +557,12 @@ const SettingsPageNav: React.FC = () => {
                       <CreditCardIcon fontSize="small" />
                     </Avatar>
                     <Box>
-                      <Typography fontWeight={600}>{account.accountName}</Typography>
+                      <Typography fontWeight={600}>
+                        {account.accountName}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {account.accountType} • Balance: ${account.currentBalance}
+                        {account.accountType} • Balance: $
+                        {account.currentBalance}
                       </Typography>
                     </Box>
                   </Box>
@@ -617,7 +648,7 @@ const SettingsPageNav: React.FC = () => {
 
 interface LinkProps {
   linkToken: string | null;
-  fetchAccounts: () => Promise<void>
+  fetchAccounts: () => Promise<void>;
 }
 const PlaidLink: React.FC<LinkProps> = (props: LinkProps) => {
   const { currentUser } = useAuth();
