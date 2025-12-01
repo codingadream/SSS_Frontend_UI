@@ -1,5 +1,5 @@
 // src/pages/HomePage.tsx
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Drawer,
@@ -36,6 +36,9 @@ import { signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { useNavigate } from "react-router-dom";
 import type { Account, Transaction, QuickAction } from "../types/types";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { callSync } from "../helpers";
 
 const drawerWidth = 240;
 
@@ -89,6 +92,7 @@ const HomePage: React.FC = () => {
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const hasRun = useRef(false);
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
   const handleLogout = async () => {
@@ -145,6 +149,16 @@ const HomePage: React.FC = () => {
         return "#9E9E9E";
     }
   };
+
+
+  useEffect(() => {
+    if (hasRun.current) {
+      return; // Already ran, so exit immediately
+    }
+
+    hasRun.current = true;
+    callSync(currentUser);
+  }, []);
 
   // ----- Drawer -----
   const drawer = (

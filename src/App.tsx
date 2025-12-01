@@ -10,26 +10,15 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import HomePage from "./pages/HomePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import SettingsPage from "./pages/SettingsPage";
 import SettingsPageNav from "./pages/SettingsPageNav";
-import { useState, createContext, type Dispatch, type SetStateAction } from "react";
 import TransactionsPage from "./pages/TransactionsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
-
-interface IUserContext {
-  fbToken: string | null;
-  setFbToken: Dispatch<SetStateAction<string | null>>;
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const UserContext = createContext<IUserContext | null>(null);
+import { Toaster } from 'react-hot-toast';
 
 function App() {
-  
-const [fbToken, setFbToken] = useState<string | null>(null);
   return (
     <AuthProvider>
-      <UserContext.Provider value={{ fbToken: fbToken, setFbToken: setFbToken }}>
+      <Toaster /> 
         <Router>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
@@ -37,16 +26,11 @@ const [fbToken, setFbToken] = useState<string | null>(null);
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/settings-nav" element={<SettingsPageNav />} />
             <Route path="/analytics" element={<AnalyticsPage/>} />
-
-
-          
           </Routes>
         </Router>
-      </UserContext.Provider>
     </AuthProvider>
   );
 }
