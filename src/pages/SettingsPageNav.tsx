@@ -26,32 +26,42 @@ import {
   Mail as MailIcon,
   Lock as LockIcon,
   CreditCard as CreditCardIcon,
-  Delete as DeleteIcon,
   CameraAlt as CameraAltIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { usePlaidLink } from "react-plaid-link";
-import { UserContext } from "../App";
-
-type BankAccount = {
-  id: string;
-  accountName: string;
-  accountNumber: string;
-  routingNumber: string;
-};
+import type { AccountsResponse, UserResponse } from "../types/types";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { callSync } from "../helpers";
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updateEmail,
+  updatePassword,
+  updateProfile,
+} from "firebase/auth";
 
 const SettingsPageNav: React.FC = () => {
-  const userContext = useContext(UserContext);
+  const { currentUser } = useAuth();
   const [linkToken, setLinkToken] = useState(null);
+  const [userData, setUserData] = useState<UserResponse | null>(null);
+  const [accountsData, setAccountsData] = useState<AccountsResponse | null>(
+    null
+  );
+  const [loading, setLoading] = useState(false);
+
   const generateToken = async () => {
+    const token = await currentUser?.getIdToken();
     const response = await fetch(
       `${import.meta.env.VITE_BASE_URL}api/create_link_token`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${userContext?.fbToken}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       }
@@ -61,19 +71,82 @@ const SettingsPageNav: React.FC = () => {
     console.log(data);
   };
 
+  const fetchUser = async (force = false) => {
+    setLoading(true);
+
+    try {
+      const token = await currentUser?.getIdToken(force);
+      const response = await axios.get<UserResponse>(
+        `${import.meta.env.VITE_BASE_URL}api/user`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setUserData(response.data);
+    } catch (err) {
+      let errorMessage = "Failed to fetch users.";
+
+      if (axios.isAxiosError(err)) {
+        // Try to extract a specific error message from the server
+        errorMessage =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          errorMessage;
+      }
+
+      toast.error(errorMessage);
+      console.error("Fetch User details Error:", err);
+      // Set data to null on error
+      setUserData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAccounts = async () => {
+    setLoading(true);
+
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await axios.get<AccountsResponse>(
+        `${import.meta.env.VITE_BASE_URL}api/accounts`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setAccountsData(response.data);
+    } catch (err) {
+      let errorMessage = "Failed to fetch accounts.";
+
+      if (axios.isAxiosError(err)) {
+        // Try to extract a specific error message from the server
+        errorMessage =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          errorMessage;
+      }
+
+      toast.error(errorMessage);
+      console.error("Fetch Accounts Error:", err);
+      // Set data to null on error
+      setAccountsData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { currentUser } = useAuth();
 
   // --- Personal info ---
-  const [firstName, setFirstName] = useState<string>(
-    currentUser?.displayName?.split(" ")[0] || "John"
-  );
-  const [lastName, setLastName] = useState<string>(
-    currentUser?.displayName?.split(" ").slice(1).join(" ") || "Doe"
-  );
-  const [email, setEmail] = useState<string>(
-    currentUser?.email || "john.doe@email.com"
-  );
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [profileImage, setProfileImage] = useState<string>("");
 
   // --- Password state ---
@@ -88,27 +161,7 @@ const SettingsPageNav: React.FC = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [emailPassword, setEmailPassword] = useState("");
-
-  // --- Bank accounts ---
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([
-    {
-      id: "1",
-      accountName: "Primary Checking",
-      accountNumber: "****4829",
-      routingNumber: "021000021",
-    },
-    {
-      id: "2",
-      accountName: "Savings Account",
-      accountNumber: "****7392",
-      routingNumber: "021000021",
-    },
-  ]);
-  const [isAddBankDialogOpen, setIsAddBankDialogOpen] = useState(false);
-  const [newAccountName, setNewAccountName] = useState("");
-  const [newAccountNumber, setNewAccountNumber] = useState("");
-  const [newRoutingNumber, setNewRoutingNumber] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
 
   // --- Notifications ---
   const [snack, setSnack] = useState<{
@@ -136,62 +189,105 @@ const SettingsPageNav: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSavePersonalInfo = () => {
-    // TODO: wire to Firebase updateProfile if desired
-    openSnack("Personal information saved.", "success");
+  const handleSavePersonalInfo = async () => {
+    try {
+      await updateProfile(currentUser!, {
+        displayName: firstName + " " + lastName,
+      });
+      await fetchUser(true);
+      openSnack("Personal information saved.", "success");
+    } catch (e) {
+      setNewEmail("");
+      if (e instanceof Error) {
+        console.error(e.message);
+        openSnack("Email failed to update. " + e.message, "error");
+      } else {
+        // Fallback for non-standard errors (e.g. strings or raw objects)
+        console.error("An unexpected error occurred:", e);
+      }
+    }
   };
 
-  const handlePasswordReset = () => {
+  const handlePasswordReset = async () => {
     if (newPassword !== confirmPassword)
       return openSnack("New passwords do not match", "error");
     if (newPassword.length < 8)
       return openSnack("Password must be at least 8 characters", "error");
-    // TODO: call Firebase reauthenticate + updatePassword
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    openSnack("Password updated.", "success");
+    const credential = EmailAuthProvider.credential(
+      currentUser!.email!,
+      currentPassword
+    );
+
+    try {
+      await reauthenticateWithCredential(currentUser!, credential);
+      await updatePassword(currentUser!, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      openSnack("Password updated.", "success");
+    } catch (e) {
+      if (e instanceof Error) {
+        console.error(e.message);
+        openSnack("Password failed to update. " + e.message, "error");
+      } else {
+        // Fallback for non-standard errors (e.g. strings or raw objects)
+        console.error("An unexpected error occurred:", e);
+      }
+    }
   };
 
-  const handleEmailChange = () => {
+  const handleEmailChange = async () => {
     if (!newEmail.includes("@"))
       return openSnack("Enter a valid email address", "error");
-    // TODO: call Firebase reauthenticate + updateEmail
-    setEmail(newEmail);
-    setIsEmailDialogOpen(false);
-    setNewEmail("");
-    setEmailPassword("");
-    openSnack("Email updated.", "success");
-  };
-
-  const handleAddBankAccount = () => {
-    if (!newAccountName || !newAccountNumber || !newRoutingNumber) {
-      return openSnack("Please fill in all fields", "error");
+    const credential = EmailAuthProvider.credential(
+      currentUser!.email!,
+      emailPassword
+    );
+    try {
+      await reauthenticateWithCredential(currentUser!, credential);
+      await updateEmail(currentUser!, newEmail); //TODO verify email to enhance security, and disable email enumeration in firebase settings
+      await fetchUser(true);
+      setIsChangingEmail(true);
+    } catch (e) {
+      setNewEmail("");
+      if (e instanceof Error) {
+        console.error(e.message);
+        openSnack("Email failed to update. " + e.message, "error");
+      } else {
+        // Fallback for non-standard errors (e.g. strings or raw objects)
+        console.error("An unexpected error occurred:", e);
+      }
     }
-    const acct: BankAccount = {
-      id: Date.now().toString(),
-      accountName: newAccountName,
-      accountNumber: `****${newAccountNumber.slice(-4)}`,
-      routingNumber: newRoutingNumber,
-    };
-    setBankAccounts((prev) => [...prev, acct]);
-    setIsAddBankDialogOpen(false);
-    setNewAccountName("");
-    setNewAccountNumber("");
-    setNewRoutingNumber("");
-    openSnack("Bank account added.", "success");
-  };
-
-  const handleDeleteBankAccount = () => {
-    if (!deleteId) return;
-    setBankAccounts((prev) => prev.filter((a) => a.id !== deleteId));
-    setDeleteId(null);
-    openSnack("Bank account removed.", "success");
+    setIsEmailDialogOpen(false);
+    setEmailPassword("");
   };
 
   useEffect(() => {
+    if (isChangingEmail) {
+      if (userData?.email == newEmail) {
+        openSnack("Email updated.", "success");
+        setNewEmail("");
+      } else {
+        openSnack("Email failed to update.", "error");
+        setNewEmail("");
+      }
+    }
+    setIsChangingEmail(false);
+  }, [isChangingEmail]);
+
+  useEffect(() => {
     generateToken();
+    fetchUser();
+    fetchAccounts();
   }, []);
+
+  useEffect(() => {
+    setFirstName(userData?.fullName?.split(" ")[0] || "John");
+    setLastName(userData?.fullName?.split(" ")[1] || "Doe");
+    setEmail(userData?.email || "john.doe@email.com");
+  }, [userData]);
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <Box
@@ -242,6 +338,7 @@ const SettingsPageNav: React.FC = () => {
                   {(firstName?.[0] || "J").toUpperCase()}
                   {(lastName?.[0] || "D").toUpperCase()}
                 </Avatar>
+                {/*
                 <Tooltip title="Change photo">
                   <IconButton
                     size="small"
@@ -258,6 +355,8 @@ const SettingsPageNav: React.FC = () => {
                     <CameraAltIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
+                  */}
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -274,6 +373,8 @@ const SettingsPageNav: React.FC = () => {
                 <Typography variant="body2" color="text.secondary">
                   {email}
                 </Typography>
+                {
+                  /*
                 <Button
                   onClick={handleProfileImageClick}
                   size="small"
@@ -287,6 +388,9 @@ const SettingsPageNav: React.FC = () => {
                 >
                   Change Photo
                 </Button>
+                  */
+                }
+                
               </Box>
             </Box>
 
@@ -295,7 +399,7 @@ const SettingsPageNav: React.FC = () => {
                 <TextField
                   label="First Name"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => setFirstName(e.target.value)} //TODO
                   fullWidth
                 />
               </Grid>
@@ -303,7 +407,7 @@ const SettingsPageNav: React.FC = () => {
                 <TextField
                   label="Last Name"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={(e) => setLastName(e.target.value)} //TODO
                   fullWidth
                 />
               </Grid>
@@ -468,14 +572,14 @@ const SettingsPageNav: React.FC = () => {
             }
             subheader="Manage your linked bank accounts"
             action={
-              <PlaidLink linkToken={linkToken} />
+              <PlaidLink linkToken={linkToken} fetchAccounts={fetchAccounts} />
             }
           />
           <CardContent>
             <Box sx={{ display: "grid", gap: 1.5 }}>
-              {bankAccounts.map((a) => (
+              {accountsData?.accounts.map((account) => (
                 <Box
-                  key={a.id}
+                  key={account.accountId}
                   sx={{
                     display: "flex",
                     alignItems: "center",
@@ -492,21 +596,19 @@ const SettingsPageNav: React.FC = () => {
                       <CreditCardIcon fontSize="small" />
                     </Avatar>
                     <Box>
-                      <Typography fontWeight={600}>{a.accountName}</Typography>
+                      <Typography fontWeight={600}>
+                        {account.accountName}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {a.accountNumber} • Routing: {a.routingNumber}
+                        {account.accountType} • Balance: $
+                        {account.currentBalance}
                       </Typography>
                     </Box>
                   </Box>
-                  <Tooltip title="Remove">
-                    <IconButton color="error" onClick={() => setDeleteId(a.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
                 </Box>
               ))}
 
-              {bankAccounts.length === 0 && (
+              {accountsData && accountsData?.accounts.length === 0 && (
                 <Box
                   sx={{ textAlign: "center", py: 4, color: "text.secondary" }}
                 >
@@ -563,83 +665,6 @@ const SettingsPageNav: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Add Bank Account Dialog */}
-      <Dialog
-        open={isAddBankDialogOpen}
-        onClose={() => setIsAddBankDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Add Bank Account</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enter your bank account details to link a new account.
-          </Typography>
-          <Box sx={{ display: "grid", gap: 2 }}>
-            <TextField
-              label="Account Name"
-              placeholder="e.g., Primary Checking"
-              value={newAccountName}
-              onChange={(e) => setNewAccountName(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Account Number"
-              placeholder="Account number"
-              value={newAccountNumber}
-              onChange={(e) => setNewAccountNumber(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Routing Number"
-              placeholder="9-digit routing number"
-              value={newRoutingNumber}
-              onChange={(e) => setNewRoutingNumber(e.target.value)}
-              fullWidth
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setIsAddBankDialogOpen(false)}
-            variant="outlined"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAddBankAccount}
-            variant="contained"
-            sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
-          >
-            Add Account
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={Boolean(deleteId)} onClose={() => setDeleteId(null)}>
-        <DialogTitle>Remove Bank Account</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary">
-            Are you sure you want to remove this bank account? This action
-            cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteId(null)} variant="outlined">
-            Cancel
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleDeleteBankAccount}
-          >
-            Remove Account
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       {/* Snackbar */}
       <Snackbar
         open={snack.open}
@@ -662,18 +687,18 @@ const SettingsPageNav: React.FC = () => {
 
 interface LinkProps {
   linkToken: string | null;
+  fetchAccounts: () => Promise<void>;
 }
 const PlaidLink: React.FC<LinkProps> = (props: LinkProps) => {
   const { currentUser } = useAuth();
-  const userContext = useContext(UserContext);
   const exchangeToken = async (publicToken: string) => {
-    const fbToken = await currentUser?.getIdToken();
+    const token = await currentUser?.getIdToken();
     const response = await fetch(
       `${import.meta.env.VITE_BASE_URL}api/exchange_public_token`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${userContext?.fbToken}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ public_token: publicToken }),
@@ -682,9 +707,11 @@ const PlaidLink: React.FC<LinkProps> = (props: LinkProps) => {
     const data = await response.json();
     console.log(data);
   };
-  const onSuccess = React.useCallback((public_token: string) => {
+  const onSuccess = React.useCallback(async (public_token: string) => {
     // send public_token to server
-    exchangeToken(public_token);
+    await exchangeToken(public_token);
+    await callSync(currentUser);
+    props.fetchAccounts();
   }, []);
   const config: Parameters<typeof usePlaidLink>[0] = {
     token: props.linkToken!,

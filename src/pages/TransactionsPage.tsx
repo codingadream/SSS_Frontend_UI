@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Drawer,
@@ -30,33 +30,46 @@ import {
   Help as HelpIcon,
   AccountBalance as AccountBalanceIcon,
   ShoppingCart as ShoppingCartIcon,
+  PriceCheck as PriceCheckIcon,
+  CreditCardOff as CreditCardOffIcon,
+  LocalActivity as LocalActivityIcon,
+  LocalDining as LocalDiningIcon,
   AttachMoney as AttachMoneyIcon,
+  ShoppingBag as ShoppingBagIcon,
+  MedicalInformation as MedicalInformationIcon,
+  ContentCut as ContentCutIcon,
+  RoomService as RoomServiceIcon,
+  Gavel as GavelIcon,
+  DirectionsCar as DirectionsCarIcon,
+  FlightTakeoff as FlightTakeoffIcon,
+  Apartment as ApartmentIcon,
+  HelpOutline as HelpOutlineIcon,
   Home as HomeIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { useNavigate } from "react-router-dom";
-import type { Transaction } from "../types/types";
+import type {
+  MonthRequest,
+  TransactionResponse,
+  UserResponse,
+} from "../types/types";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { convertToReadableDate } from "../helpers";
 
 const drawerWidth = 240;
-
-// Mock transaction data
-const mockTransactions: Transaction[] = [
-  { id: "1", merchant: "Freelance Payment", category: "Income", date: "Oct 8, 2025 • 11:22 AM", amount: 1235.05, type: "credit" },
-  { id: "2", merchant: "Target", category: "Shopping", date: "Oct 8, 2025 • 04:13 PM", amount: -172.05, type: "debit" },
-  { id: "3", merchant: "Electric Bill", category: "Utilities", date: "Oct 8, 2025 • 07:49 PM", amount: -17.41, type: "debit" },
-  { id: "4", merchant: "Salary Deposit", category: "Income", date: "Oct 7, 2025 • 06:09 PM", amount: 3500.0, type: "credit" },
-  { id: "5", merchant: "Amazon", category: "Shopping", date: "Oct 7, 2025 • 10:15 AM", amount: -156.99, type: "debit" },
-  { id: "6", merchant: "Grocery Store", category: "Food", date: "Oct 6, 2025 • 03:30 PM", amount: -87.23, type: "debit" },
-  { id: "7", merchant: "Online Income", category: "Income", date: "Oct 6, 2025 • 09:00 AM", amount: 450.0, type: "credit" },
-  { id: "8", merchant: "Gas Station", category: "Transportation", date: "Oct 5, 2025 • 05:45 PM", amount: -45.67, type: "debit" },
-];
 
 const TransactionsPage: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("all");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  //const [selectedCategory, setSelectedCategory] = useState("all");
+  const [loading, setLoading] = useState(false);
+  const [transactionsData, setTransactionsData] =
+    useState<TransactionResponse | null>(null);
+  const [userData, setUserData] = useState<UserResponse | null>(null);
+
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -71,18 +84,161 @@ const TransactionsPage: React.FC = () => {
     }
   };
 
-  const totalTransactions = mockTransactions.length;
-  const totalSpent = mockTransactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-  const totalIncome = mockTransactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
+  const fetchTransactions = async (month: string | null) => {
+    setLoading(true);
 
-  const getCategoryIcon = (category: string) => {
-    const iconProps = { sx: { color: "#666" } };
-    if (category === "Income") return <AttachMoneyIcon {...iconProps} />;
-    if (category === "Shopping") return <ShoppingCartIcon {...iconProps} />;
-    if (category === "Utilities") return <HomeIcon {...iconProps} />;
-    return <ShoppingCartIcon {...iconProps} />;
+    const requestBody: MonthRequest = {
+      MonthYear: month,
+    };
+
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await axios.post<TransactionResponse>(
+        `${import.meta.env.VITE_BASE_URL}api/transactions`,
+        requestBody,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setTransactionsData(response.data);
+    } catch (err) {
+      let errorMessage = "Failed to fetch transactions.";
+
+      if (axios.isAxiosError(err)) {
+        // Try to extract a specific error message from the server
+        errorMessage =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          errorMessage;
+      }
+
+      toast.error(errorMessage);
+      console.error("Fetch Transactions Error:", err);
+      // Set data to null on error
+      setTransactionsData(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const fetchUser = async () => {
+    setLoading(true);
+
+    try {
+      const token = await currentUser?.getIdToken();
+
+      const response = await axios.get<UserResponse>(
+        `${import.meta.env.VITE_BASE_URL}api/user`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setUserData(response.data);
+      console.log("Successfully fetched user data.");
+    } catch (err) {
+      let errorMessage = "Failed to fetch user data.";
+
+      if (axios.isAxiosError(err)) {
+        const axiosError = err;
+
+        // Try to extract a specific error message from the server response
+        errorMessage =
+          axiosError.response?.data?.detail ||
+          axiosError.response?.data?.message ||
+          errorMessage;
+      } else if (err instanceof Error) {
+        // Handle the error from the token guard clause
+        errorMessage = err.message;
+      }
+
+      toast.error(errorMessage);
+      console.error("Fetch User Error:", err);
+      setUserData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [totalTransactions, setTotalTransactions] = useState<number | null>(
+    null
+  );
+  const [totalSpent, setTotalSpent] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0);
+
+  useEffect(() => {
+    fetchTransactions(null);
+    fetchUser();
+  }, []);
+
+  //calculations once we have transaction data
+  useEffect(() => {
+    setTotalTransactions(transactionsData?.transactionCount ?? null);
+    setTotalSpent(
+      transactionsData?.transactions
+        .filter((t) => t.amount > 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0) ?? 0
+    );
+    setTotalIncome(
+      transactionsData?.transactions
+        .filter((t) => t.amount < 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0) ?? 0
+    );
+  }, [transactionsData]);
+
+  const getCategoryIcon = (category: string) => {
+    // Standard icon props for consistency
+    const iconProps = { sx: { color: "#666" } };
+
+    // Normalize the input category string by removing spaces and converting to uppercase
+    // to handle potential variations, although your image uses snake_case which is good.
+    const normalizedCategory = category.toUpperCase().replace(/ /g, "_");
+
+    switch (normalizedCategory) {
+      case "INCOME":
+        return <AttachMoneyIcon {...iconProps} />; // $ symbol
+      case "TRANSFER_IN":
+      case "TRANSFER_OUT":
+        return <SwapHorizIcon {...iconProps} />; // Arrow for movement
+      case "LOAN_PAYMENTS":
+        return <PriceCheckIcon {...iconProps} />; // Icon suggesting payment/check
+      case "BANK_FEES":
+        return <CreditCardOffIcon {...iconProps} />; // Card with a cross/off sign
+      case "ENTERTAINMENT":
+        return <LocalActivityIcon {...iconProps} />; // Ticket icon
+      case "FOOD_AND_DRINK":
+        return <LocalDiningIcon {...iconProps} />; // Dining/cutlery icon
+      case "GENERAL_MERCHANDISE":
+        return <ShoppingBagIcon {...iconProps} />; // Shopping bag
+      case "HOME_IMPROVEMENT":
+        return <HomeIcon {...iconProps} />; // Home icon
+      case "MEDICAL":
+        return <MedicalInformationIcon {...iconProps} />; // Medical symbol
+      case "PERSONAL_CARE":
+        return <ContentCutIcon {...iconProps} />; // Scissors (for salons/grooming)
+      case "GENERAL_SERVICES":
+        return <RoomServiceIcon {...iconProps} />; // Room service bell (general service)
+      case "GOVERNMENT_AND_NON_PROFIT":
+        return <GavelIcon {...iconProps} />; // Gavel (suggesting authority/legal)
+      case "TRANSPORTATION":
+        return <DirectionsCarIcon {...iconProps} />; // Car icon
+      case "TRAVEL":
+        return <FlightTakeoffIcon {...iconProps} />; // Airplane icon
+      case "RENT_AND_UTILITIES":
+        return <ApartmentIcon {...iconProps} />; // Apartment building
+
+      // Default case for any category not explicitly mapped
+      default:
+        return <HelpOutlineIcon {...iconProps} />; // Question mark icon for unknown/missing
+    }
+  };
+
+  
   const getCategoryColor = (category: string) => {
     if (category === "Income") return "#4CAF50";
     if (category === "Shopping") return "#4CAF50";
@@ -91,14 +247,19 @@ const TransactionsPage: React.FC = () => {
     if (category === "Transportation") return "#4CAF50";
     return "#4CAF50";
   };
-
+  
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Toolbar sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
         <Box
           sx={{
-            width: 40, height: 40, borderRadius: "50%", bgcolor: "#00796B",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            bgcolor: "#00796B",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <AccountBalanceIcon sx={{ color: "white" }} />
@@ -109,36 +270,62 @@ const TransactionsPage: React.FC = () => {
       </Toolbar>
 
       <Divider />
-      <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary" }}>Menu</Typography>
+      <Typography
+        variant="caption"
+        sx={{ px: 2, py: 1, color: "text.secondary" }}
+      >
+        Menu
+      </Typography>
       <List>
         <ListItem disablePadding>
           <ListItemButton onClick={() => navigate("/home")}>
-            <ListItemIcon><DashboardIcon /></ListItemIcon>
+            <ListItemIcon>
+              <DashboardIcon />
+            </ListItemIcon>
             <ListItemText primary="Dashboard" />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton selected sx={{ bgcolor: "#E0F2F1" }}>
-            <ListItemIcon><SwapHorizIcon sx={{ color: "#00796B" }} /></ListItemIcon>
+            <ListItemIcon>
+              <SwapHorizIcon sx={{ color: "#00796B" }} />
+            </ListItemIcon>
             <ListItemText primary="Transactions" />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton>
-            <ListItemIcon><TrendingUpIcon /></ListItemIcon>
+            <ListItemIcon>
+              <TrendingUpIcon />
+            </ListItemIcon>
             <ListItemText primary="Analytics" />
           </ListItemButton>
         </ListItem>
       </List>
 
       <Divider />
-      <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary" }}>Other</Typography>
+      <Typography
+        variant="caption"
+        sx={{ px: 2, py: 1, color: "text.secondary" }}
+      >
+        Other
+      </Typography>
       <List>
         <ListItem disablePadding>
-          <ListItemButton><ListItemIcon><SettingsIcon /></ListItemIcon><ListItemText primary="Settings" /></ListItemButton>
+          <ListItemButton>
+            <ListItemIcon>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Settings" />
+          </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton><ListItemIcon><HelpIcon /></ListItemIcon><ListItemText primary="Help & Support" /></ListItemButton>
+          <ListItemButton>
+            <ListItemIcon>
+              <HelpIcon />
+            </ListItemIcon>
+            <ListItemText primary="Help & Support" />
+          </ListItemButton>
         </ListItem>
       </List>
 
@@ -146,10 +333,16 @@ const TransactionsPage: React.FC = () => {
         <Card sx={{ bgcolor: "#F1F1F1", borderRadius: 2 }}>
           <CardContent>
             <Box display="flex" alignItems="center" gap={2}>
-              <Avatar sx={{ bgcolor: "#00796B" }}>{currentUser?.email?.[0].toUpperCase() || "J"}</Avatar>
+              <Avatar sx={{ bgcolor: "#00796B" }}>
+                {currentUser?.email?.[0].toUpperCase() || "J"}
+              </Avatar>
               <Box flex={1}>
-                <Typography variant="subtitle2" fontWeight={600}>{currentUser?.displayName || "John Doe"}</Typography>
-                <Typography variant="caption" color="text.secondary">{currentUser?.email || "john.doe@email.com"}</Typography>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {currentUser?.displayName || "John Doe"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {currentUser?.email || "john.doe@email.com"}
+                </Typography>
               </Box>
             </Box>
           </CardContent>
@@ -196,9 +389,13 @@ const TransactionsPage: React.FC = () => {
       </AppBar>
 
       {/* Main content */}
+
       <Box sx={{ display: "flex", flexGrow: 1, pt: 8 }}>
         {/* Drawer */}
-        <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
+        <Box
+          component="nav"
+          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        >
           <Drawer
             variant="temporary"
             open={mobileOpen}
@@ -224,151 +421,224 @@ const TransactionsPage: React.FC = () => {
         </Box>
 
         {/* Content area */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            width: { md: `calc(100% - ${drawerWidth}px)` },
-            px: { xs: 3, sm: 5, md: 8 },
-            py: 4,
-          }}
-        >
-          <Box sx={{ maxWidth: "1800px", mx: "auto", width: "100%" }}>
-            {/* Header */}
-            <Typography variant="h4" fontWeight={700} gutterBottom sx={{ color: 'black' }}>
-              Transaction History
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4, color:"black" }}>
-              View and manage all your transactions
-            </Typography>
+        {!loading ? (
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              width: { md: `calc(100% - ${drawerWidth}px)` },
+              px: { xs: 3, sm: 5, md: 8 },
+              py: 4,
+            }}
+          >
+            <Box sx={{ maxWidth: "1800px", mx: "auto", width: "100%" }}>
+              {/* Header */}
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                gutterBottom
+                sx={{ color: "black" }}
+              >
+                Transaction History
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ mb: 4, color: "black" }}
+              >
+                View and manage all your transactions
+              </Typography>
 
-            {/* Filters */}
-            <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
-              <FormControl sx={{ minWidth: 180 }}>
-                <InputLabel>Filter by Month</InputLabel>
-                <Select value={selectedMonth} label="Filter by Month" onChange={(e) => setSelectedMonth(e.target.value)}>
-                  <MenuItem value="all">All months</MenuItem>
-                  <MenuItem value="oct">October 2025</MenuItem>
-                  <MenuItem value="sep">September 2025</MenuItem>
-                  <MenuItem value="aug">August 2025</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl sx={{ minWidth: 180 }}>
-                <InputLabel>Filter by Category</InputLabel>
-                <Select value={selectedCategory} label="Filter by Category" onChange={(e) => setSelectedCategory(e.target.value)}>
-                  <MenuItem value="all">All categories</MenuItem>
-                  <MenuItem value="Income">Income</MenuItem>
-                  <MenuItem value="Shopping">Shopping</MenuItem>
-                  <MenuItem value="Utilities">Utilities</MenuItem>
-                  <MenuItem value="Food">Food</MenuItem>
-                  <MenuItem value="Transportation">Transportation</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            {/* Summary Cards */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid size={{xs:12, md:4}}>
-                <Card sx={{ borderRadius: 3, bgcolor: "#F1F1F1" }}>
-                  <CardContent>
-                    <Typography variant="body2" color="text.secondary" gutterBottom sx={{ color: 'black' }}>
-                      Total Transactions
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="#4CAF50">
-                      {totalTransactions}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid size={{xs:12, md:4}}>
-                <Card sx={{ borderRadius: 3, bgcolor: "#F1F1F1" }}>
-                  <CardContent>
-                    <Typography variant="body2" color="text.secondary" gutterBottom sx={{ color: 'black' }}>
-                      Total Spent
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="text.primary">
-                      -${totalSpent.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid size={{xs:12, md:4}}>
-                <Card sx={{ borderRadius: 3, bgcolor: "#E8F5E9" }}>
-                  <CardContent>
-                    <Typography variant="body2" color="text.secondary" gutterBottom sx={{ color: 'black' }}>
-                      Total Income
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="#4CAF50">
-                      +${totalIncome.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-
-            {/* Transactions List */}
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2, color: 'black'   }}>
-              All Transactions
-            </Typography>
-            <Card sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ p: 0 }}>
-                {mockTransactions.map((transaction, index) => (
-                  <Box
-                    key={transaction.id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      px: 3,
-                      py: 2,
-                      borderBottom: index < mockTransactions.length - 1 ? "1px solid #eee" : "none",
-                      "&:hover": { bgcolor: "#FAFAFA" },
+              {/* Filters */}
+              <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
+                <FormControl sx={{ minWidth: 180 }}>
+                  <InputLabel>Filter by Month</InputLabel>
+                  <Select
+                    value={selectedMonth}
+                    label="Filter by Month"
+                    onChange={(e) => {
+                      setSelectedMonth(e.target.value);
+                      if (e.target.value != "all") fetchTransactions(e.target.value);
+                      else fetchTransactions(null);
                     }}
                   >
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar sx={{ bgcolor: "#F1F1F1", width: 40, height: 40 }}>
-                        {getCategoryIcon(transaction.category)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          {transaction.merchant}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {transaction.category} • {transaction.date}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Box sx={{ textAlign: "right" }}>
+                    <MenuItem value={"all"}>All</MenuItem>
+                    {userData?.transactionMonths.map((monthStr) => {
+                      return (
+                        <MenuItem value={monthStr}>
+                          {convertToReadableDate(monthStr)}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+                {/*
+                <FormControl sx={{ minWidth: 180 }}>
+                  <InputLabel>Filter by Category</InputLabel>
+                  <Select
+                    value={selectedCategory}
+                    label="Filter by Category"
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    <MenuItem value="all">All categories</MenuItem>
+                    <MenuItem value="Income">Income</MenuItem>
+                    <MenuItem value="Shopping">Shopping</MenuItem>
+                    <MenuItem value="Utilities">Utilities</MenuItem>
+                    <MenuItem value="Food">Food</MenuItem>
+                    <MenuItem value="Transportation">Transportation</MenuItem>
+                  </Select>
+                </FormControl>
+                */}
+              </Box>
+
+              {/* Summary Cards */}
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Card sx={{ borderRadius: 3, bgcolor: "#F1F1F1" }}>
+                    <CardContent>
                       <Typography
                         variant="body2"
-                        sx={{
-                          color: getCategoryColor(transaction.category),
-                          fontWeight: 600,
-                          mb: 0.5,
-                        }}
+                        color="text.secondary"
+                        gutterBottom
+                        sx={{ color: "black" }}
                       >
-                        {transaction.category}
+                        Total Transactions
+                      </Typography>
+                      <Typography variant="h4" fontWeight={700} color="#4CAF50">
+                        {totalTransactions}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Card sx={{ borderRadius: 3, bgcolor: "#F1F1F1" }}>
+                    <CardContent>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                        sx={{ color: "black" }}
+                      >
+                        Total Spent
                       </Typography>
                       <Typography
-                        variant="subtitle2"
+                        variant="h4"
                         fontWeight={700}
-                        color={transaction.type === "credit" ? "success.main" : "text.primary"}
+                        color="text.primary"
                       >
-                        {transaction.amount >= 0 ? "+" : "-"}${Math.abs(transaction.amount).toLocaleString("en-US", {
+                        -$
+                        {totalSpent.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                         })}
                       </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Card sx={{ borderRadius: 3, bgcolor: "#E8F5E9" }}>
+                    <CardContent>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                        sx={{ color: "black" }}
+                      >
+                        Total Income
+                      </Typography>
+                      <Typography variant="h4" fontWeight={700} color="#4CAF50">
+                        +$
+                        {totalIncome.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {/* Transactions List */}
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                gutterBottom
+                sx={{ mb: 2, color: "black" }}
+              >
+                All Transactions
+              </Typography>
+              <Card sx={{ borderRadius: 3 }}>
+                <CardContent sx={{ p: 0 }}>
+                  {transactionsData?.transactions.map((transaction, index) => (
+                    <Box
+                      key={transaction.transactionId}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        px: 3,
+                        py: 2,
+                        borderBottom:
+                          index < (totalTransactions ?? 0) - 1
+                            ? "1px solid #eee"
+                            : "none",
+                        "&:hover": { bgcolor: "#FAFAFA" },
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar
+                          sx={{ bgcolor: "#F1F1F1", width: 40, height: 40 }}
+                        >
+                          {getCategoryIcon(transaction.plaidCategoryPrimary)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            {transaction.merchantName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {transaction.plaidCategoryPrimary} •{" "}
+                            {transaction.transactionDate}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ textAlign: "right" }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: getCategoryColor(
+                              transaction.plaidCategoryPrimary
+                            ),
+                            fontWeight: 600,
+                            mb: 0.5,
+                          }}
+                        >
+                          {transaction.plaidCategoryPrimary}
+                        </Typography>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={700}
+                          color={"text.primary"}
+                        >
+                          {transaction.amount <= 0 ? "+" : "-"}${" "}
+                          {/*plaid data reverses signs for some reason*/}
+                          {Math.abs(transaction.amount).toLocaleString(
+                            "en-US",
+                            {
+                              minimumFractionDigits: 2,
+                            }
+                          )}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </Box>
-                ))}
-              </CardContent>
-            </Card>
+                  )) ?? <div>Not loaded</div>}
+                </CardContent>
+              </Card>
+            </Box>
           </Box>
-        </Box>
+        ) : (
+          <div>loading</div>
+        )}
       </Box>
     </Box>
   );
 };
 
 export default TransactionsPage;
-
