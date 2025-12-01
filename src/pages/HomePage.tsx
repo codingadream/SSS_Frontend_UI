@@ -39,17 +39,49 @@ import type { Account, Transaction, QuickAction } from "../types/types";
 
 const drawerWidth = 240;
 
-// 模拟账户数据
+// mock accounts
 const mockAccounts: Account[] = [
-  { id: "1", name: "Weekly Spending Checking Account", accountNumber: "****4829", balance: -12543.89, type: "checking" },
-  { id: "2", name: "Weekly Spending Savings Account", accountNumber: "****7392", balance: -48290.12, type: "savings" },
-  { id: "3", name: "Weekly Spending Total", accountNumber: "****1047", balance: -2847.32, type: "total" },
+  {
+    id: "1",
+    name: "Weekly Spending Checking Account",
+    accountNumber: "****4829",
+    balance: -12543.89,
+    type: "checking",
+  },
+  {
+    id: "2",
+    name: "Weekly Spending Savings Account",
+    accountNumber: "****7392",
+    balance: -48290.12,
+    type: "savings",
+  },
+  {
+    id: "3",
+    name: "Weekly Spending Total",
+    accountNumber: "****1047",
+    balance: -2847.32,
+    type: "total",
+  },
 ];
 
-// 模拟交易记录
+// mock transactions
 const mockTransactions: Transaction[] = [
-  { id: "1", merchant: "Amazon", category: "Shopping", date: "Oct 1, 2025", amount: -156.99, type: "debit" },
-  { id: "2", merchant: "Salary Deposit", category: "Income", date: "Oct 1, 2025", amount: 3500.0, type: "credit" },
+  {
+    id: "1",
+    merchant: "Amazon",
+    category: "Shopping",
+    date: "Oct 1, 2025",
+    amount: -156.99,
+    type: "debit",
+  },
+  {
+    id: "2",
+    merchant: "Salary Deposit",
+    category: "Income",
+    date: "Oct 1, 2025",
+    amount: 3500.0,
+    type: "credit",
+  },
 ];
 
 const HomePage: React.FC = () => {
@@ -70,48 +102,72 @@ const HomePage: React.FC = () => {
 
   const totalBalance = mockAccounts.reduce((sum, acc) => sum + acc.balance, 0);
 
-  // 生成支出概览数据（基于月份）
+  // spending overview data
   const spendingData = [
     { month: "Jul", spending: 3200, limit: 5000 },
     { month: "Aug", spending: 4100, limit: 5000 },
     { month: "Sep", spending: 3800, limit: 5000 },
     { month: "Oct", spending: 2850, limit: 5000 },
   ];
-  
-  // 计算最大高度用于比例缩放
-  const maxSpending = Math.max(...spendingData.map(d => d.spending), 5000);
+
+  const maxSpending = Math.max(...spendingData.map((d) => d.spending), 5000);
 
   const quickActions: QuickAction[] = [
-    { id: "1", title: "Analytics", icon: <TrendingUpIcon sx={{ fontSize: 36, color: "#009688" }} />, route: "/analytics" },
-    { id: "2", title: "Transactions", icon: <SwapHorizIcon sx={{ fontSize: 36, color: "#4CAF50" }} />, route: "/transactions" },
-    { id: "3", title: "Edit Spending Limits", icon: <AddIcon sx={{ fontSize: 36, color: "#FFC107" }} />, route: "/limits" },
+    {
+      id: "1",
+      title: "Analytics",
+      icon: <TrendingUpIcon sx={{ fontSize: 36, color: "#009688" }} />,
+      route: "/analytics",
+    },
+    {
+      id: "2",
+      title: "Transactions",
+      icon: <SwapHorizIcon sx={{ fontSize: 36, color: "#4CAF50" }} />,
+      route: "/transactions",
+    },
+    {
+      id: "3",
+      title: "Edit Spending Limits",
+      icon: <AddIcon sx={{ fontSize: 36, color: "#FFC107" }} />,
+      route: "/limits",
+    },
   ];
 
   const getAccountColor = (type: string) => {
     switch (type) {
-      case "checking": return "#00695C";
-      case "savings": return "#00796B";
-      case "total": return "#689F38";
-      default: return "#9E9E9E";
+      case "checking":
+        return "#00695C";
+      case "savings":
+        return "#00796B";
+      case "total":
+        return "#689F38";
+      default:
+        return "#9E9E9E";
     }
   };
 
-  // 侧边栏 Drawer
+  // ----- Drawer -----
   const drawer = (
-    <Box 
-      sx={{ 
-        height: "100%", 
-        display: "flex", 
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
         flexDirection: "column",
         background: "linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)",
-        backgroundImage: "radial-gradient(circle at 20% 50%, rgba(0, 121, 107, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(77, 182, 172, 0.05) 0%, transparent 50%)",
+        backgroundImage:
+          "radial-gradient(circle at 20% 50%, rgba(0, 121, 107, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(77, 182, 172, 0.05) 0%, transparent 50%)",
       }}
     >
       <Toolbar sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
         <Box
           sx={{
-            width: 40, height: 40, borderRadius: "50%", bgcolor: "#00796B",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            bgcolor: "#00796B",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             transition: "all 0.3s ease",
             "&:hover": {
               transform: "scale(1.1)",
@@ -127,12 +183,18 @@ const HomePage: React.FC = () => {
       </Toolbar>
 
       <Divider />
-      <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600 }}>Menu</Typography>
+      <Typography
+        variant="caption"
+        sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600 }}
+      >
+        Menu
+      </Typography>
       <List>
+        {/* Dashboard */}
         <ListItem disablePadding>
-          <ListItemButton 
-            selected 
-            sx={{ 
+          <ListItemButton
+            selected
+            sx={{
               bgcolor: "#E0F2F1",
               borderRadius: 1,
               mx: 1.5,
@@ -150,12 +212,16 @@ const HomePage: React.FC = () => {
               },
             }}
           >
-            <ListItemIcon><DashboardIcon sx={{ color: "#00796B" }} /></ListItemIcon>
+            <ListItemIcon>
+              <DashboardIcon sx={{ color: "#00796B" }} />
+            </ListItemIcon>
             <ListItemText primary="Dashboard" />
           </ListItemButton>
         </ListItem>
+
+        {/* Transactions */}
         <ListItem disablePadding>
-          <ListItemButton 
+          <ListItemButton
             onClick={() => navigate("/transactions")}
             sx={{
               borderRadius: 1,
@@ -171,12 +237,17 @@ const HomePage: React.FC = () => {
               },
             }}
           >
-            <ListItemIcon><SwapHorizIcon /></ListItemIcon>
+            <ListItemIcon>
+              <SwapHorizIcon />
+            </ListItemIcon>
             <ListItemText primary="Transactions" />
           </ListItemButton>
         </ListItem>
+
+        {/* Analytics → /analytics */}
         <ListItem disablePadding>
           <ListItemButton
+            onClick={() => navigate("/analytics")}
             sx={{
               borderRadius: 1,
               mx: 1.5,
@@ -191,17 +262,26 @@ const HomePage: React.FC = () => {
               },
             }}
           >
-            <ListItemIcon><TrendingUpIcon /></ListItemIcon>
+            <ListItemIcon>
+              <TrendingUpIcon />
+            </ListItemIcon>
             <ListItemText primary="Analytics" />
           </ListItemButton>
         </ListItem>
       </List>
 
       <Divider />
-      <Typography variant="caption" sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600 }}>Other</Typography>
+      <Typography
+        variant="caption"
+        sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600 }}
+      >
+        Other
+      </Typography>
       <List>
+        {/* Settings (single, styled, routed) */}
         <ListItem disablePadding>
           <ListItemButton
+            onClick={() => navigate("/settings-nav")}
             sx={{
               borderRadius: 1,
               mx: 1.5,
@@ -216,10 +296,14 @@ const HomePage: React.FC = () => {
               },
             }}
           >
-            <ListItemIcon><SettingsIcon /></ListItemIcon>
+            <ListItemIcon>
+              <SettingsIcon />
+            </ListItemIcon>
             <ListItemText primary="Settings" />
           </ListItemButton>
         </ListItem>
+
+        {/* Help & Support (kept once) */}
         <ListItem disablePadding>
           <ListItemButton
             sx={{
@@ -236,17 +320,18 @@ const HomePage: React.FC = () => {
               },
             }}
           >
-            <ListItemIcon><HelpIcon /></ListItemIcon>
+            <ListItemIcon>
+              <HelpIcon />
+            </ListItemIcon>
             <ListItemText primary="Help & Support" />
           </ListItemButton>
         </ListItem>
-        <ListItem disablePadding><ListItemButton onClick={() => navigate("/settings-nav")}><ListItemIcon><SettingsIcon /></ListItemIcon><ListItemText primary="Settings" /></ListItemButton></ListItem>
-        <ListItem disablePadding><ListItemButton><ListItemIcon><HelpIcon /></ListItemIcon><ListItemText primary="Help & Support" /></ListItemButton></ListItem>
       </List>
 
+      {/* User card at bottom */}
       <Box sx={{ mt: "auto", p: 2 }}>
-        <Card 
-          sx={{ 
+        <Card
+          sx={{
             bgcolor: "#ffffff",
             borderRadius: 2,
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
@@ -261,8 +346,8 @@ const HomePage: React.FC = () => {
         >
           <CardContent>
             <Box display="flex" alignItems="center" gap={2}>
-              <Avatar 
-                sx={{ 
+              <Avatar
+                sx={{
                   bgcolor: "#00796B",
                   transition: "all 0.3s ease",
                   cursor: "pointer",
@@ -271,8 +356,12 @@ const HomePage: React.FC = () => {
                 {currentUser?.email?.[0].toUpperCase() || "J"}
               </Avatar>
               <Box flex={1}>
-                <Typography variant="subtitle2" fontWeight={600}>{currentUser?.displayName || "John Doe"}</Typography>
-                <Typography variant="caption" color="text.secondary">{currentUser?.email || "john.doe@email.com"}</Typography>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {currentUser?.displayName || "John Doe"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {currentUser?.email || "john.doe@email.com"}
+                </Typography>
               </Box>
             </Box>
           </CardContent>
@@ -281,6 +370,7 @@ const HomePage: React.FC = () => {
     </Box>
   );
 
+  // ----- Main layout -----
   return (
     <Box
       sx={{
@@ -290,7 +380,7 @@ const HomePage: React.FC = () => {
         bgcolor: "#F9FAFB",
       }}
     >
-      {/* 顶部 AppBar */}
+      {/* AppBar */}
       <AppBar
         position="fixed"
         sx={{
@@ -317,11 +407,14 @@ const HomePage: React.FC = () => {
           </IconButton>
         </Toolbar>
       </AppBar>
-  
-      {/* 主体区域（Drawer + Content） */}
+
+      {/* Drawer + content */}
       <Box sx={{ display: "flex", flexGrow: 1, pt: 8 }}>
-        {/* 左侧导航 */}
-        <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
+        {/* Left nav */}
+        <Box
+          component="nav"
+          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        >
           <Drawer
             variant="temporary"
             open={mobileOpen}
@@ -345,8 +438,8 @@ const HomePage: React.FC = () => {
             {drawer}
           </Drawer>
         </Box>
-  
-        {/* 主内容 */}
+
+        {/* Main content */}
         <Box
           component="main"
           sx={{
@@ -360,63 +453,84 @@ const HomePage: React.FC = () => {
             <Typography variant="body2" color="text.secondary" gutterBottom>
               Here's what's happening with your accounts today
             </Typography>
-  
+
             {/* Total Balance */}
             <Box sx={{ my: 3 }}>
-              <Typography variant="body2" sx={{ color: 'black' }}>
+              <Typography variant="body2" sx={{ color: "black" }}>
                 Total Balance
               </Typography>
               <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="h3" fontWeight={700} sx={{ color: 'black' }}>
-                  ${totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                <Typography
+                  variant="h3"
+                  fontWeight={700}
+                  sx={{ color: "black" }}
+                >
+                  $
+                  {totalBalance.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
                 </Typography>
                 <VisibilityIcon sx={{ color: "text.secondary" }} />
               </Box>
             </Box>
-  
+
             {/* Accounts */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
               {mockAccounts.map((acc) => (
-                <Grid size={{xs:12, sm:6, md:4}}>
+                <Grid key={acc.id} size={{ xs: 12, sm: 6, md: 4 }}>
                   <Card
                     sx={{
                       bgcolor: getAccountColor(acc.type),
                       color: "white",
                       borderRadius: 3,
                       boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                      "&:hover": { boxShadow: "0 4px 12px rgba(0,0,0,0.15)" },
+                      "&:hover": {
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      },
                     }}
                   >
                     <CardContent>
                       <Typography variant="subtitle2">{acc.name}</Typography>
-                      <Typography variant="caption">{acc.accountNumber}</Typography>
+                      <Typography variant="caption">
+                        {acc.accountNumber}
+                      </Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
                         Balance
                       </Typography>
                       <Typography variant="h4" fontWeight={700}>
-                        {acc.balance < 0 ? "-" : ""}${Math.abs(acc.balance).toLocaleString()}
+                        {acc.balance < 0 ? "-" : ""}$
+                        {Math.abs(acc.balance).toLocaleString()}
                       </Typography>
                     </CardContent>
                   </Card>
                 </Grid>
               ))}
             </Grid>
-  
+
             {/* Quick Actions */}
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: 'black' }}>
+            <Typography
+              variant="h6"
+              fontWeight={600}
+              gutterBottom
+              sx={{ color: "black" }}
+            >
               Quick Actions
             </Typography>
             <Grid container spacing={3} sx={{ mb: 5 }}>
               {quickActions.map((action) => (
-                <Grid size={{xs:12, sm:4} }>
+                <Grid key={action.id} size={{ xs: 12, sm: 4 }}>
                   <Card
+                    onClick={() => navigate(action.route)}
                     sx={{
                       textAlign: "center",
                       py: 4,
                       borderRadius: 3,
                       cursor: "pointer",
                       transition: "0.2s",
-                      "&:hover": { boxShadow: 5, transform: "translateY(-4px)" },
+                      "&:hover": {
+                        boxShadow: 5,
+                        transform: "translateY(-4px)",
+                      },
                     }}
                   >
                     <CardContent>
@@ -429,12 +543,13 @@ const HomePage: React.FC = () => {
                 </Grid>
               ))}
             </Grid>
-  
+
             {/* Bottom Section */}
             <Grid container spacing={3}>
-              <Grid size={{xs:12, md:6} }>
-                <Card 
-                  sx={{ 
+              {/* Spending Overview */}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card
+                  sx={{
                     borderRadius: 3,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                     transition: "all 0.3s ease",
@@ -444,33 +559,60 @@ const HomePage: React.FC = () => {
                   }}
                 >
                   <CardContent>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 3,
+                      }}
+                    >
                       <BarChartIcon sx={{ color: "#00796B", fontSize: 28 }} />
                       <Typography variant="h6" fontWeight={600}>
                         Spending Overview
                       </Typography>
                     </Box>
 
-                    {/* 简洁的图表设计 */}
+                    {/* chart */}
                     <Box sx={{ width: "100%" }}>
-                      {/* 顶部：限额线标识 */}
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                        <Typography variant="caption" sx={{ fontSize: "10px", color: "text.secondary" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          mb: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: "10px",
+                            color: "text.secondary",
+                          }}
+                        >
                           Monthly Limit: $5,000
                         </Typography>
-                        {spendingData.some(d => d.spending > d.limit) && (
-                          <Typography variant="caption" sx={{ fontSize: "10px", color: "#E57373", fontWeight: 600 }}>
+                        {spendingData.some(
+                          (d) => d.spending > d.limit
+                        ) && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: "10px",
+                              color: "#E57373",
+                              fontWeight: 600,
+                            }}
+                          >
                             Over Limit Detected
                           </Typography>
                         )}
                       </Box>
 
-                      {/* 图表区域 */}
-                      <Box 
-                        sx={{ 
-                          display: "flex", 
-                          alignItems: "flex-end", 
-                          gap: 3, 
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "flex-end",
+                          gap: 3,
                           height: 220,
                           position: "relative",
                           pb: 4,
@@ -478,36 +620,40 @@ const HomePage: React.FC = () => {
                           mb: 2,
                         }}
                       >
-                        {/* 限额参考线 - 在背景层 */}
+                        {/* limit line */}
                         <Box
                           sx={{
                             position: "absolute",
                             bottom: 0,
                             left: 0,
                             right: 0,
-                            height: (spendingData[0].limit / maxSpending) * 220,
-                            borderTop: "2px dashed rgba(255, 107, 107, 0.5)",
+                            height:
+                              (spendingData[0].limit / maxSpending) * 220,
+                            borderTop:
+                              "2px dashed rgba(255, 107, 107, 0.5)",
                             zIndex: 0,
                             pointerEvents: "none",
                           }}
                         />
 
-                        {/* 柱状图 */}
                         {spendingData.map((data, i) => {
-                          const barHeight = (data.spending / maxSpending) * 220;
-                          const percentage = Math.round((data.spending / data.limit) * 100);
+                          const barHeight =
+                            (data.spending / maxSpending) * 220;
+                          const percentage = Math.round(
+                            (data.spending / data.limit) * 100
+                          );
                           const isOverLimit = data.spending > data.limit;
-                          const barColor = isOverLimit 
-                            ? "#E57373" 
-                            : percentage > 80 
-                            ? "#FFB74D" 
+                          const barColor = isOverLimit
+                            ? "#E57373"
+                            : percentage > 80
+                            ? "#FFB74D"
                             : "#4DB6AC";
 
                           return (
-                            <Box 
-                              key={i} 
-                              sx={{ 
-                                flex: 1, 
+                            <Box
+                              key={i}
+                              sx={{
+                                flex: 1,
                                 display: "flex",
                                 flexDirection: "column",
                                 alignItems: "center",
@@ -517,7 +663,6 @@ const HomePage: React.FC = () => {
                                 zIndex: 2,
                               }}
                             >
-                              {/* Tooltip */}
                               {hoveredBar === i && (
                                 <Box
                                   sx={{
@@ -533,7 +678,8 @@ const HomePage: React.FC = () => {
                                     fontSize: "12px",
                                     fontWeight: 600,
                                     zIndex: 20,
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                                    boxShadow:
+                                      "0 4px 12px rgba(0,0,0,0.15)",
                                     mb: 1,
                                     textAlign: "center",
                                     minWidth: 100,
@@ -545,35 +691,52 @@ const HomePage: React.FC = () => {
                                       transform: "translateX(-50%)",
                                       width: 0,
                                       height: 0,
-                                      borderLeft: "6px solid transparent",
-                                      borderRight: "6px solid transparent",
+                                      borderLeft:
+                                        "6px solid transparent",
+                                      borderRight:
+                                        "6px solid transparent",
                                       borderTop: "6px solid #333",
                                     },
                                   }}
                                 >
-                                  <Box component="div" sx={{ display: "block", lineHeight: 1.4 }}>
+                                  <Box
+                                    component="div"
+                                    sx={{
+                                      display: "block",
+                                      lineHeight: 1.4,
+                                    }}
+                                  >
                                     ${data.spending.toLocaleString()}
                                   </Box>
-                                  <Box component="div" sx={{ fontSize: "10px", opacity: 0.9, mt: 0.25 }}>
+                                  <Box
+                                    component="div"
+                                    sx={{
+                                      fontSize: "10px",
+                                      opacity: 0.9,
+                                      mt: 0.25,
+                                    }}
+                                  >
                                     {percentage}% of limit
                                   </Box>
                                 </Box>
                               )}
 
-                              {/* 数值显示在柱子顶部 */}
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
+                              <Typography
+                                variant="caption"
+                                sx={{
                                   fontSize: "11px",
                                   fontWeight: 600,
                                   mb: 0.5,
-                                  color: isOverLimit ? "#E57373" : percentage > 80 ? "#FFB74D" : barColor,
+                                  color: isOverLimit
+                                    ? "#E57373"
+                                    : percentage > 80
+                                    ? "#FFB74D"
+                                    : barColor,
                                 }}
                               >
                                 ${Math.round(data.spending / 100) / 10}K
                               </Typography>
 
-                              {/* 柱状条 */}
                               <Box
                                 sx={{
                                   width: "100%",
@@ -584,9 +747,11 @@ const HomePage: React.FC = () => {
                                   position: "relative",
                                   transition: "all 0.3s ease",
                                   cursor: "pointer",
-                                  boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                                  boxShadow:
+                                    "0 2px 6px rgba(0,0,0,0.1)",
                                   "&:hover": {
-                                    transform: "translateY(-4px) scale(1.05)",
+                                    transform:
+                                      "translateY(-4px) scale(1.05)",
                                     boxShadow: `0 8px 20px ${barColor}60`,
                                   },
                                 }}
@@ -594,12 +759,17 @@ const HomePage: React.FC = () => {
                                 onMouseLeave={() => setHoveredBar(null)}
                               />
 
-                              {/* 月份和百分比 */}
-                              <Box sx={{ mt: 1.5, textAlign: "center", width: "100%" }}>
-                                <Typography 
-                                  variant="caption" 
-                                  sx={{ 
-                                    fontWeight: 600, 
+                              <Box
+                                sx={{
+                                  mt: 1.5,
+                                  textAlign: "center",
+                                  width: "100%",
+                                }}
+                              >
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 600,
                                     display: "block",
                                     color: "text.primary",
                                     fontSize: "12px",
@@ -608,11 +778,15 @@ const HomePage: React.FC = () => {
                                 >
                                   {data.month}
                                 </Typography>
-                                <Typography 
-                                  variant="caption" 
-                                  sx={{ 
+                                <Typography
+                                  variant="caption"
+                                  sx={{
                                     fontSize: "10px",
-                                    color: isOverLimit ? "#E57373" : percentage > 80 ? "#FFB74D" : "text.secondary",
+                                    color: isOverLimit
+                                      ? "#E57373"
+                                      : percentage > 80
+                                      ? "#FFB74D"
+                                      : "text.secondary",
                                     fontWeight: 600,
                                   }}
                                 >
@@ -624,23 +798,88 @@ const HomePage: React.FC = () => {
                         })}
                       </Box>
 
-                      {/* 简化的图例 */}
-                      <Box sx={{ display: "flex", gap: 2, justifyContent: "center", flexWrap: "wrap", mt: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <Box sx={{ width: 14, height: 14, bgcolor: "#4DB6AC", borderRadius: "4px" }} />
-                          <Typography variant="caption" sx={{ fontSize: "11px", color: "text.secondary" }}>
+                      {/* legend */}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 2,
+                          justifyContent: "center",
+                          flexWrap: "wrap",
+                          mt: 2,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 14,
+                              height: 14,
+                              bgcolor: "#4DB6AC",
+                              borderRadius: "4px",
+                            }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: "11px",
+                              color: "text.secondary",
+                            }}
+                          >
                             Normal
                           </Typography>
                         </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <Box sx={{ width: 14, height: 14, bgcolor: "#FFB74D", borderRadius: "4px" }} />
-                          <Typography variant="caption" sx={{ fontSize: "11px", color: "text.secondary" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 14,
+                              height: 14,
+                              bgcolor: "#FFB74D",
+                              borderRadius: "4px",
+                            }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: "11px",
+                              color: "text.secondary",
+                            }}
+                          >
                             Warning (80%+)
                           </Typography>
                         </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <Box sx={{ width: 14, height: 14, bgcolor: "#E57373", borderRadius: "4px" }} />
-                          <Typography variant="caption" sx={{ fontSize: "11px", color: "text.secondary" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 14,
+                              height: 14,
+                              bgcolor: "#E57373",
+                              borderRadius: "4px",
+                            }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: "11px",
+                              color: "text.secondary",
+                            }}
+                          >
                             Over Limit
                           </Typography>
                         </Box>
@@ -649,8 +888,9 @@ const HomePage: React.FC = () => {
                   </CardContent>
                 </Card>
               </Grid>
-  
-              <Grid size={{xs:12, md:6}} >
+
+              {/* Recent Transactions */}
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Card sx={{ borderRadius: 3 }}>
                   <CardContent>
                     <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -667,13 +907,22 @@ const HomePage: React.FC = () => {
                           borderBottom: "1px solid #eee",
                         }}
                       >
-                        <Box display="flex" alignItems="center" gap={2}>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          gap={2}
+                        >
                           <Avatar sx={{ bgcolor: "#F1F1F1" }}>
                             <ShoppingCartIcon sx={{ color: "#666" }} />
                           </Avatar>
                           <Box>
-                            <Typography variant="subtitle2">{t.merchant}</Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="subtitle2">
+                              {t.merchant}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               {t.category} • {t.date}
                             </Typography>
                           </Box>
@@ -681,9 +930,15 @@ const HomePage: React.FC = () => {
                         <Typography
                           variant="subtitle1"
                           fontWeight={600}
-                          color={t.type === "credit" ? "success.main" : "text.primary"}
+                          color={
+                            t.type === "credit"
+                              ? "success.main"
+                              : "text.primary"
+                          }
                         >
-                          {t.amount < 0 ? "-" : "+"}${Math.abs(t.amount).toFixed(2)}
+                          {t.amount < 0 ? "-" : "+"}${Math.abs(t.amount).toFixed(
+                            2
+                          )}
                         </Typography>
                       </Box>
                     ))}
@@ -696,7 +951,6 @@ const HomePage: React.FC = () => {
       </Box>
     </Box>
   );
-  
 };
 
 export default HomePage;

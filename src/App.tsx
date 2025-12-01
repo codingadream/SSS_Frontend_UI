@@ -14,7 +14,7 @@ import SettingsPage from "./pages/SettingsPage";
 import SettingsPageNav from "./pages/SettingsPageNav";
 import { useState, createContext, type Dispatch, type SetStateAction } from "react";
 import TransactionsPage from "./pages/TransactionsPage";
-
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 interface IUserContext {
   fbToken: string | null;
@@ -40,6 +40,7 @@ const [fbToken, setFbToken] = useState<string | null>(null);
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/settings-nav" element={<SettingsPageNav />} />
+            <Route path="/analytics" element={<AnalyticsPage/>} />
 
 
           
