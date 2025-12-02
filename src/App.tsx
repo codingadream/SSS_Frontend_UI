@@ -11,8 +11,8 @@ import SignUpPage from "./pages/SignUpPage";
 import HomePage from "./pages/HomePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import SettingsPageNav from "./pages/SettingsPageNav";
-import { useState, createContext, type Dispatch, type SetStateAction, useEffect } from "react";
 import TransactionsPage from "./pages/TransactionsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -28,6 +28,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/settings-nav" element={<SettingsPageNav />} />
+            <Route path="/analytics" element={<AnalyticsPage/>} />
           </Routes>
         </Router>
     </AuthProvider>
