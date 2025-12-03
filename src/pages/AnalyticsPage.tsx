@@ -19,6 +19,10 @@ import {
   AppBar,
   Toolbar,
   IconButton,
+  TextField,
+  Button,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import Grid from "@mui/material/Grid"; // using MUI Grid v2
 import {
@@ -27,6 +31,8 @@ import {
   CheckCircle as CheckCircleIcon,
   AttachMoney as MoneyIcon,
   Menu as MenuIcon,
+  Send as SendIcon,
+  Psychology as PsychologyIcon,
 } from "@mui/icons-material";
 
 import {
@@ -48,6 +54,8 @@ import Sidebar from "../components/Sidebar";
 const drawerWidth = 240;
 
 // -------------------- Mock data --------------------
+import { useAuth } from "../contexts/AuthContext";
+// -------------------- Mock data (same as your Figma code) --------------------
 const monthlySpendingData = [
   { month: "Jan", amount: 3200 },
   { month: "Feb", amount: 2800 },
@@ -224,10 +232,15 @@ const monthOptions = Object.keys(categoryData);
 
 // -------------------- Page --------------------
 const AnalyticsPage: React.FC = () => {
+  const { currentUser } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState<string>("October");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+  const [llmQuery, setLlmQuery] = useState<string>("");
+  const [llmResponse, setLlmResponse] = useState<string>("");
+  const [isLoadingLlm, setIsLoadingLlm] = useState<boolean>(false);
+  const [llmError, setLlmError] = useState<string>("");
 
   const currentMonthData = categoryData[selectedMonth] || [];
   const recs = recommendations[selectedMonth];
@@ -235,6 +248,60 @@ const AnalyticsPage: React.FC = () => {
     () => currentMonthData.reduce((sum, c) => sum + c.value, 0),
     [currentMonthData]
   );
+
+  // Map month name to month number
+  const monthNameToNumber: Record<string, number> = {
+    January: 1, February: 2, March: 3, April: 4,
+    May: 5, June: 6, July: 7, August: 8,
+    September: 9, October: 10, November: 11, December: 12
+  };
+
+  // Function to call LLM endpoint
+  const handleLlmQuery = async () => {
+    if (!llmQuery.trim()) {
+      setLlmError("Please enter a query");
+      return;
+    }
+
+    setIsLoadingLlm(true);
+    setLlmError("");
+    setLlmResponse("");
+
+    try {
+      // Get Firebase auth token
+      const token = await currentUser?.getIdToken();
+      
+      if (!token) {
+        throw new Error("You must be logged in to use this feature");
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}api/llm/query`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          query: llmQuery,
+          month: monthNameToNumber[selectedMonth] || 10,
+          year: 2024,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.title || "Failed to get financial advice");
+      }
+
+      const data = await response.json();
+      setLlmResponse(data.response || "No response received");
+    } catch (error) {
+      console.error("Error calling LLM endpoint:", error);
+      setLlmError(error instanceof Error ? error.message : "An error occurred while processing your query");
+    } finally {
+      setIsLoadingLlm(false);
+    }
+  };
 
   return (
     <Box
