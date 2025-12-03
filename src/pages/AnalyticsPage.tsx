@@ -270,7 +270,7 @@ const AnalyticsPage: React.FC = () => {
         body: JSON.stringify({
           query: llmQuery,
           month: monthNameToNumber[selectedMonth] || 10,
-          year: 2024,
+          year: new Date().getFullYear(),
         }),
       });
 
