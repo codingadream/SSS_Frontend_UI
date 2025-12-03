@@ -1,5 +1,5 @@
 // src/pages/SettingsPageNav.tsx
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -19,6 +19,9 @@ import {
   Snackbar,
   Alert,
   Tooltip,
+  Drawer,
+  AppBar,
+  Toolbar,
 } from "@mui/material";
 import {
   Settings as SettingsIcon,
@@ -29,6 +32,7 @@ import {
   CameraAlt as CameraAltIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
+  Menu as MenuIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import { usePlaidLink } from "react-plaid-link";
@@ -45,14 +49,23 @@ import {
   updateProfile,
 } from "firebase/auth";
 
+import Sidebar from "../components/Sidebar";
+
+const drawerWidth = 240;
+
 const SettingsPageNav: React.FC = () => {
   const { currentUser } = useAuth();
-  const [linkToken, setLinkToken] = useState(null);
+
+  const [linkToken, setLinkToken] = useState<string | null>(null);
   const [userData, setUserData] = useState<UserResponse | null>(null);
   const [accountsData, setAccountsData] = useState<AccountsResponse | null>(
     null
   );
   const [loading, setLoading] = useState(false);
+
+  // mobile drawer state for sidebar
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const generateToken = async () => {
     const token = await currentUser?.getIdToken();
@@ -90,7 +103,6 @@ const SettingsPageNav: React.FC = () => {
       let errorMessage = "Failed to fetch users.";
 
       if (axios.isAxiosError(err)) {
-        // Try to extract a specific error message from the server
         errorMessage =
           err.response?.data?.detail ||
           err.response?.data?.message ||
@@ -99,7 +111,6 @@ const SettingsPageNav: React.FC = () => {
 
       toast.error(errorMessage);
       console.error("Fetch User details Error:", err);
-      // Set data to null on error
       setUserData(null);
     } finally {
       setLoading(false);
@@ -125,7 +136,6 @@ const SettingsPageNav: React.FC = () => {
       let errorMessage = "Failed to fetch accounts.";
 
       if (axios.isAxiosError(err)) {
-        // Try to extract a specific error message from the server
         errorMessage =
           err.response?.data?.detail ||
           err.response?.data?.message ||
@@ -134,7 +144,6 @@ const SettingsPageNav: React.FC = () => {
 
       toast.error(errorMessage);
       console.error("Fetch Accounts Error:", err);
-      // Set data to null on error
       setAccountsData(null);
     } finally {
       setLoading(false);
@@ -143,7 +152,7 @@ const SettingsPageNav: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- Personal info ---
+  // --- Personal info state ---
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -178,6 +187,7 @@ const SettingsPageNav: React.FC = () => {
     setSnack({ open: true, msg, sev });
 
   const handleProfileImageClick = () => fileInputRef.current?.click();
+
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -202,7 +212,6 @@ const SettingsPageNav: React.FC = () => {
         console.error(e.message);
         openSnack("Email failed to update. " + e.message, "error");
       } else {
-        // Fallback for non-standard errors (e.g. strings or raw objects)
         console.error("An unexpected error occurred:", e);
       }
     }
@@ -213,6 +222,7 @@ const SettingsPageNav: React.FC = () => {
       return openSnack("New passwords do not match", "error");
     if (newPassword.length < 8)
       return openSnack("Password must be at least 8 characters", "error");
+
     const credential = EmailAuthProvider.credential(
       currentUser!.email!,
       currentPassword
@@ -230,7 +240,6 @@ const SettingsPageNav: React.FC = () => {
         console.error(e.message);
         openSnack("Password failed to update. " + e.message, "error");
       } else {
-        // Fallback for non-standard errors (e.g. strings or raw objects)
         console.error("An unexpected error occurred:", e);
       }
     }
@@ -239,13 +248,14 @@ const SettingsPageNav: React.FC = () => {
   const handleEmailChange = async () => {
     if (!newEmail.includes("@"))
       return openSnack("Enter a valid email address", "error");
+
     const credential = EmailAuthProvider.credential(
       currentUser!.email!,
       emailPassword
     );
     try {
       await reauthenticateWithCredential(currentUser!, credential);
-      await updateEmail(currentUser!, newEmail); //TODO verify email to enhance security, and disable email enumeration in firebase settings
+      await updateEmail(currentUser!, newEmail);
       await fetchUser(true);
       setIsChangingEmail(true);
     } catch (e) {
@@ -254,7 +264,6 @@ const SettingsPageNav: React.FC = () => {
         console.error(e.message);
         openSnack("Email failed to update. " + e.message, "error");
       } else {
-        // Fallback for non-standard errors (e.g. strings or raw objects)
         console.error("An unexpected error occurred:", e);
       }
     }
@@ -264,7 +273,7 @@ const SettingsPageNav: React.FC = () => {
 
   useEffect(() => {
     if (isChangingEmail) {
-      if (userData?.email == newEmail) {
+      if (userData?.email === newEmail) {
         openSnack("Email updated.", "success");
         setNewEmail("");
       } else {
@@ -273,7 +282,7 @@ const SettingsPageNav: React.FC = () => {
       }
     }
     setIsChangingEmail(false);
-  }, [isChangingEmail]);
+  }, [isChangingEmail, newEmail, userData]);
 
   useEffect(() => {
     generateToken();
@@ -293,334 +302,412 @@ const SettingsPageNav: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
         bgcolor: "#F9FAFB",
-        px: { xs: 3, sm: 5, md: 8 },
-        py: 4,
       }}
     >
-      <Box sx={{ maxWidth: 1200, mx: "auto" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-          <SettingsIcon sx={{ color: "#00695C" }} />
-          <Typography variant="h5" fontWeight={700} sx={{ color: "#0b1721" }}>
+      {/* Top AppBar with title + mobile menu button */}
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
+          bgcolor: "white",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { md: "none" }, color: "text.primary" }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1, color: "text.primary" }}>
             Profile Settings
           </Typography>
+        </Toolbar>
+      </AppBar>
+
+      {/* Sidebar + main content wrapper */}
+      <Box sx={{ display: "flex", flexGrow: 1, pt: 8 }}>
+        {/* Left Sidebar (shared component) */}
+        <Box
+          component="nav"
+          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        >
+          {/* Mobile drawer */}
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              display: { xs: "block", md: "none" },
+              "& .MuiDrawer-paper": { width: drawerWidth },
+            }}
+          >
+            <Sidebar />
+          </Drawer>
+
+          {/* Desktop permanent drawer */}
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: "none", md: "block" },
+              "& .MuiDrawer-paper": { width: drawerWidth },
+            }}
+            open
+          >
+            <Sidebar />
+          </Drawer>
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          Manage your account settings and preferences
-        </Typography>
 
-        {/* PERSONAL INFORMATION */}
-        <Card sx={{ mb: 3, borderRadius: 3 }}>
-          <MUICardHeader
-            title={
-              <Box display="flex" alignItems="center" gap={1}>
-                <PersonIcon sx={{ color: "#00695C" }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Personal Information
-                </Typography>
-              </Box>
-            }
-            subheader="Update your name and personal details"
-          />
-          <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 3, pb: 3 }}>
-              <Box sx={{ position: "relative" }}>
-                <Avatar
-                  src={profileImage || undefined}
-                  sx={{
-                    width: 96,
-                    height: 96,
-                    bgcolor: "#E0F2F1",
-                    color: "#00695C",
-                    fontSize: 32,
-                  }}
-                >
-                  {(firstName?.[0] || "J").toUpperCase()}
-                  {(lastName?.[0] || "D").toUpperCase()}
-                </Avatar>
-                {/*
-                <Tooltip title="Change photo">
-                  <IconButton
-                    size="small"
-                    onClick={handleProfileImageClick}
-                    sx={{
-                      position: "absolute",
-                      right: -6,
-                      bottom: -6,
-                      bgcolor: "#00695C",
-                      color: "white",
-                      "&:hover": { bgcolor: "#075e54" },
-                    }}
-                  >
-                    <CameraAltIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                  */}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfileImageChange}
-                  style={{ display: "none" }}
-                />
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  {firstName} {lastName}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {email}
-                </Typography>
-                {
-                  /*
-                <Button
-                  onClick={handleProfileImageClick}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    mt: 1.5,
-                    borderColor: "#00695C",
-                    color: "#00695C",
-                    "&:hover": { bgcolor: "#E0F2F1" },
-                  }}
-                >
-                  Change Photo
-                </Button>
-                  */
-                }
-                
-              </Box>
+        {/* Main settings content (your original content) */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            width: { md: `calc(100% - ${drawerWidth}px)` },
+            px: { xs: 3, sm: 5, md: 8 },
+            py: 4,
+          }}
+        >
+          <Box sx={{ maxWidth: 1200, mx: "auto" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+              <SettingsIcon sx={{ color: "#00695C" }} />
+              <Typography
+                variant="h5"
+                fontWeight={700}
+                sx={{ color: "#0b1721" }}
+              >
+                Profile Settings
+              </Typography>
             </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+              Manage your account settings and preferences
+            </Typography>
 
-            <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  label="First Name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)} //TODO
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  label="Last Name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)} //TODO
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-
-            <Button
-              variant="contained"
-              onClick={handleSavePersonalInfo}
-              sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
-            >
-              Save Changes
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* EMAIL ADDRESS */}
-        <Card sx={{ mb: 3, borderRadius: 3 }}>
-          <MUICardHeader
-            title={
-              <Box display="flex" alignItems="center" gap={1}>
-                <MailIcon sx={{ color: "#00695C" }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Email Address
-                </Typography>
-              </Box>
-            }
-            subheader="Change the email address associated with your account"
-          />
-          <CardContent>
-            <Grid container spacing={2} alignItems="center">
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  label="Current Email"
-                  value={email}
-                  disabled
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => setIsEmailDialogOpen(true)}
-                  sx={{
-                    borderColor: "#00695C",
-                    color: "#00695C",
-                    "&:hover": { bgcolor: "#E0F2F1" },
-                  }}
-                >
-                  Change Email Address
-                </Button>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* PASSWORD */}
-        <Card sx={{ mb: 3, borderRadius: 3 }}>
-          <MUICardHeader
-            title={
-              <Box display="flex" alignItems="center" gap={1}>
-                <LockIcon sx={{ color: "#00695C" }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Password
-                </Typography>
-              </Box>
-            }
-            subheader="Change your password to keep your account secure"
-          />
-          <CardContent>
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  label="Current Password"
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  fullWidth
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={() => setShowCurrentPassword((s) => !s)}
-                      >
-                        {showCurrentPassword ? (
-                          <VisibilityOffIcon />
-                        ) : (
-                          <VisibilityIcon />
-                        )}
-                      </IconButton>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  label="New Password"
-                  type={showNewPassword ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  fullWidth
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton onClick={() => setShowNewPassword((s) => !s)}>
-                        {showNewPassword ? (
-                          <VisibilityOffIcon />
-                        ) : (
-                          <VisibilityIcon />
-                        )}
-                      </IconButton>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  label="Confirm New Password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  fullWidth
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={() => setShowConfirmPassword((s) => !s)}
-                      >
-                        {showConfirmPassword ? (
-                          <VisibilityOffIcon />
-                        ) : (
-                          <VisibilityIcon />
-                        )}
-                      </IconButton>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            <Button
-              variant="contained"
-              onClick={handlePasswordReset}
-              sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
-            >
-              Change Password
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* BANK ACCOUNTS */}
-        <Card sx={{ mb: 3, borderRadius: 3 }}>
-          <MUICardHeader
-            title={
-              <Box display="flex" alignItems="center" gap={1}>
-                <CreditCardIcon sx={{ color: "#00695C" }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Bank Accounts
-                </Typography>
-              </Box>
-            }
-            subheader="Manage your linked bank accounts"
-            action={
-              <PlaidLink linkToken={linkToken} fetchAccounts={fetchAccounts} />
-            }
-          />
-          <CardContent>
-            <Box sx={{ display: "grid", gap: 1.5 }}>
-              {accountsData?.accounts.map((account) => (
+            {/* PERSONAL INFORMATION */}
+            <Card sx={{ mb: 3, borderRadius: 3 }}>
+              <MUICardHeader
+                title={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <PersonIcon sx={{ color: "#00695C" }} />
+                    <Typography variant="h6" fontWeight={700}>
+                      Personal Information
+                    </Typography>
+                  </Box>
+                }
+                subheader="Update your name and personal details"
+              />
+              <CardContent>
                 <Box
-                  key={account.accountId}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    p: 2,
-                    border: "1px solid #eee",
-                    bgcolor: "white",
-                    borderRadius: 2,
-                    "&:hover": { bgcolor: "#FAFAFA" },
-                  }}
+                  sx={{ display: "flex", alignItems: "center", gap: 3, pb: 3 }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Avatar sx={{ bgcolor: "#E0F2F1", color: "#00695C" }}>
-                      <CreditCardIcon fontSize="small" />
+                  <Box sx={{ position: "relative" }}>
+                    <Avatar
+                      src={profileImage || undefined}
+                      sx={{
+                        width: 96,
+                        height: 96,
+                        bgcolor: "#E0F2F1",
+                        color: "#00695C",
+                        fontSize: 32,
+                      }}
+                    >
+                      {(firstName?.[0] || "J").toUpperCase()}
+                      {(lastName?.[0] || "D").toUpperCase()}
                     </Avatar>
-                    <Box>
-                      <Typography fontWeight={600}>
-                        {account.accountName}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {account.accountType} • Balance: $
-                        {account.currentBalance}
-                      </Typography>
-                    </Box>
+
+                    {/* Optional change photo button */}
+                    {/*
+                    <Tooltip title="Change photo">
+                      <IconButton
+                        size="small"
+                        onClick={handleProfileImageClick}
+                        sx={{
+                          position: "absolute",
+                          right: -6,
+                          bottom: -6,
+                          bgcolor: "#00695C",
+                          color: "white",
+                          "&:hover": { bgcolor: "#075e54" },
+                        }}
+                      >
+                        <CameraAltIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    */}
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageChange}
+                      style={{ display: "none" }}
+                    />
+                  </Box>
+
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      {firstName} {lastName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {email}
+                    </Typography>
                   </Box>
                 </Box>
-              ))}
 
-              {accountsData && accountsData?.accounts.length === 0 && (
-                <Box
-                  sx={{ textAlign: "center", py: 4, color: "text.secondary" }}
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label="First Name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label="Last Name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                </Grid>
+
+                <Button
+                  variant="contained"
+                  onClick={handleSavePersonalInfo}
+                  sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
                 >
-                  No bank accounts linked. Add one to get started.
+                  Save Changes
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* EMAIL ADDRESS */}
+            <Card sx={{ mb: 3, borderRadius: 3 }}>
+              <MUICardHeader
+                title={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <MailIcon sx={{ color: "#00695C" }} />
+                    <Typography variant="h6" fontWeight={700}>
+                      Email Address
+                    </Typography>
+                  </Box>
+                }
+                subheader="Change the email address associated with your account"
+              />
+              <CardContent>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label="Current Email"
+                      value={email}
+                      disabled
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Button
+                      variant="outlined"
+                      onClick={() => setIsEmailDialogOpen(true)}
+                      sx={{
+                        borderColor: "#00695C",
+                        color: "#00695C",
+                        "&:hover": { bgcolor: "#E0F2F1" },
+                      }}
+                    >
+                      Change Email Address
+                    </Button>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
+            {/* PASSWORD */}
+            <Card sx={{ mb: 3, borderRadius: 3 }}>
+              <MUICardHeader
+                title={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <LockIcon sx={{ color: "#00695C" }} />
+                    <Typography variant="h6" fontWeight={700}>
+                      Password
+                    </Typography>
+                  </Box>
+                }
+                subheader="Change your password to keep your account secure"
+              />
+              <CardContent>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Current Password"
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      fullWidth
+                      InputProps={{
+                        endAdornment: (
+                          <IconButton
+                            onClick={() =>
+                              setShowCurrentPassword((s) => !s)
+                            }
+                          >
+                            {showCurrentPassword ? (
+                              <VisibilityOffIcon />
+                            ) : (
+                              <VisibilityIcon />
+                            )}
+                          </IconButton>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label="New Password"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      fullWidth
+                      InputProps={{
+                        endAdornment: (
+                          <IconButton
+                            onClick={() => setShowNewPassword((s) => !s)}
+                          >
+                            {showNewPassword ? (
+                              <VisibilityOffIcon />
+                            ) : (
+                              <VisibilityIcon />
+                            )}
+                          </IconButton>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      label="Confirm New Password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      fullWidth
+                      InputProps={{
+                        endAdornment: (
+                          <IconButton
+                            onClick={() =>
+                              setShowConfirmPassword((s) => !s)
+                            }
+                          >
+                            {showConfirmPassword ? (
+                              <VisibilityOffIcon />
+                            ) : (
+                              <VisibilityIcon />
+                            )}
+                          </IconButton>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+
+                <Button
+                  variant="contained"
+                  onClick={handlePasswordReset}
+                  sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
+                >
+                  Change Password
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* BANK ACCOUNTS */}
+            <Card sx={{ mb: 3, borderRadius: 3 }}>
+              <MUICardHeader
+                title={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <CreditCardIcon sx={{ color: "#00695C" }} />
+                    <Typography variant="h6" fontWeight={700}>
+                      Bank Accounts
+                    </Typography>
+                  </Box>
+                }
+                subheader="Manage your linked bank accounts"
+                action={
+                  <PlaidLink linkToken={linkToken} fetchAccounts={fetchAccounts} />
+                }
+              />
+              <CardContent>
+                <Box sx={{ display: "grid", gap: 1.5 }}>
+                  {accountsData?.accounts.map((account) => (
+                    <Box
+                      key={account.accountId}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        p: 2,
+                        border: "1px solid #eee",
+                        bgcolor: "white",
+                        borderRadius: 2,
+                        "&:hover": { bgcolor: "#FAFAFA" },
+                      }}
+                    >
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                      >
+                        <Avatar
+                          sx={{ bgcolor: "#E0F2F1", color: "#00695C" }}
+                        >
+                          <CreditCardIcon fontSize="small" />
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight={600}>
+                            {account.accountName}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            {account.accountType} • Balance: $
+                            {account.currentBalance}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  ))}
+
+                  {accountsData && accountsData?.accounts.length === 0 && (
+                    <Box
+                      sx={{
+                        textAlign: "center",
+                        py: 4,
+                        color: "text.secondary",
+                      }}
+                    >
+                      No bank accounts linked. Add one to get started.
+                    </Box>
+                  )}
                 </Box>
-              )}
-            </Box>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
       </Box>
 
-      {/* Change Email Dialog */}
+      {/* Change Email Dialog (kept same as original) */}
       <Dialog
         open={isEmailDialogOpen}
         onClose={() => setIsEmailDialogOpen(false)}
@@ -665,6 +752,7 @@ const SettingsPageNav: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
       {/* Snackbar */}
       <Snackbar
         open={snack.open}
@@ -689,8 +777,10 @@ interface LinkProps {
   linkToken: string | null;
   fetchAccounts: () => Promise<void>;
 }
+
 const PlaidLink: React.FC<LinkProps> = (props: LinkProps) => {
   const { currentUser } = useAuth();
+
   const exchangeToken = async (publicToken: string) => {
     const token = await currentUser?.getIdToken();
     const response = await fetch(
@@ -707,17 +797,23 @@ const PlaidLink: React.FC<LinkProps> = (props: LinkProps) => {
     const data = await response.json();
     console.log(data);
   };
-  const onSuccess = React.useCallback(async (public_token: string) => {
-    // send public_token to server
-    await exchangeToken(public_token);
-    await callSync(currentUser);
-    props.fetchAccounts();
-  }, []);
+
+  const onSuccess = React.useCallback(
+    async (public_token: string) => {
+      await exchangeToken(public_token);
+      await callSync(currentUser);
+      props.fetchAccounts();
+    },
+    [currentUser, props]
+  );
+
   const config: Parameters<typeof usePlaidLink>[0] = {
     token: props.linkToken!,
     onSuccess,
   };
+
   const { open, ready } = usePlaidLink(config);
+
   return (
     <Button
       onClick={() => open()}

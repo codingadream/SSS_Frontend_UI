@@ -15,13 +15,18 @@ import {
   ListItemAvatar,
   ListItemText,
   LinearProgress,
+  Drawer,
+  AppBar,
+  Toolbar,
+  IconButton,
 } from "@mui/material";
-import Grid from "@mui/material/Grid";// using MUI Grid v2 (matches your HomePage)
+import Grid from "@mui/material/Grid"; // using MUI Grid v2
 import {
   TrendingUp as TrendingUpIcon,
   WarningAmber as WarningIcon,
   CheckCircle as CheckCircleIcon,
   AttachMoney as MoneyIcon,
+  Menu as MenuIcon,
 } from "@mui/icons-material";
 
 import {
@@ -37,7 +42,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { PieLabelRenderProps } from "recharts";
-// -------------------- Mock data (same as your Figma code) --------------------
+
+import Sidebar from "../components/Sidebar";
+
+const drawerWidth = 240;
+
+// -------------------- Mock data --------------------
 const monthlySpendingData = [
   { month: "Jan", amount: 3200 },
   { month: "Feb", amount: 2800 },
@@ -215,6 +225,9 @@ const monthOptions = Object.keys(categoryData);
 // -------------------- Page --------------------
 const AnalyticsPage: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>("October");
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const currentMonthData = categoryData[selectedMonth] || [];
   const recs = recommendations[selectedMonth];
@@ -224,229 +237,345 @@ const AnalyticsPage: React.FC = () => {
   );
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#F9FAFB", px: { xs: 3, sm: 5, md: 8 }, py: 4 }}>
-      <Box sx={{ maxWidth: 1200, mx: "auto" }}>
-        {/* Header */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-          <Box sx={{ bgcolor: "#CBFBF1", p: 1, borderRadius: 2, display: "inline-flex" }}>
-            <MoneyIcon sx={{ color: "#00786F" }} />
-          </Box>
-          <Typography variant="h5" fontWeight={700}>Budget Breakdown</Typography>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "#F9FAFB",
+      }}
+    >
+      {/* Top AppBar */}
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
+          bgcolor: "white",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Toolbar>
+          {/* Mobile menu button */}
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { md: "none" }, color: "text.primary" }}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          <Typography variant="h6" sx={{ flexGrow: 1, color: "text.primary" }}>
+            Analytics
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      {/* Sidebar + main content */}
+      <Box sx={{ display: "flex", flexGrow: 1, pt: 8 }}>
+        {/* Left nav: uses shared Sidebar component */}
+        <Box
+          component="nav"
+          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        >
+          {/* Mobile drawer */}
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              display: { xs: "block", md: "none" },
+              "& .MuiDrawer-paper": { width: drawerWidth },
+            }}
+          >
+            <Sidebar />
+          </Drawer>
+
+          {/* Desktop drawer */}
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: "none", md: "block" },
+              "& .MuiDrawer-paper": { width: drawerWidth },
+            }}
+            open
+          >
+            <Sidebar />
+          </Drawer>
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Analyze your spending patterns and get personalized insights
-        </Typography>
 
-        {/* Controls */}
-        <Card sx={{ mb: 3, borderRadius: 3 }}>
-          <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel id="month-select-label">Select Month</InputLabel>
-              <Select
-                labelId="month-select-label"
-                label="Select Month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-              >
-                {monthOptions.map((m) => (
-                  <MenuItem key={m} value={m}>{m}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <Box sx={{ ml: "auto" }}>
-              <Chip
-                sx={{ bgcolor: "white" }}
-                label={
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant="body2" color="text.secondary">Total Spending</Typography>
-                    <Typography fontWeight={700}>
-                      ${totalSpending.toLocaleString()}
-                    </Typography>
-                  </Box>
-                }
-              />
+        {/* Main analytics content */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            width: { md: `calc(100% - ${drawerWidth}px)` },
+            px: { xs: 3, sm: 5, md: 8 },
+            py: 4,
+          }}
+        >
+          <Box sx={{ maxWidth: 1200, mx: "auto" }}>
+            {/* Header */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+              <Box sx={{ bgcolor: "#CBFBF1", p: 1, borderRadius: 2, display: "inline-flex" }}>
+                <MoneyIcon sx={{ color: "#00786F" }} />
+              </Box>
+              <Typography variant="h5" fontWeight={700}>
+                Budget Breakdown
+              </Typography>
             </Box>
-          </CardContent>
-        </Card>
-
-        {/* Charts */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Card sx={{ borderRadius: 3 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  Spending by Month
-                </Typography>
-                <Box sx={{ width: "100%", height: 320 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlySpendingData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: 8,
-                          fontSize: 14,
-                        }}
-                        formatter={(v: number) => [`$${v.toLocaleString()}`, "Spending"]}
-                      />
-                      <Bar dataKey="amount" fill="#00786F" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Card sx={{ borderRadius: 3 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  Spending by Category — {selectedMonth}
-                </Typography>
-                <Box sx={{ width: "100%", height: 320 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-<Pie
-  data={currentMonthData}
-  cx="50%"
-  cy="50%"
-  labelLine={false}
-  label={(props: PieLabelRenderProps) =>
-    `${props.name ?? ""} ${((props.percent ?? 0) * 100).toFixed(0)}%`
-  }
-  outerRadius={100}
-  dataKey="value"
->
-  {currentMonthData.map((entry, index) => (
-    <Cell key={index} fill={entry.color} />
-  ))}
-</Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: 8,
-                          fontSize: 14,
-                        }}
-                        formatter={(v: number) => `$${v.toLocaleString()}`}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* AI Insights */}
-        <Card sx={{ borderRadius: 3, mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              AI-Powered Insights — {selectedMonth}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Analyze your spending patterns and get personalized insights
             </Typography>
 
-            <Box sx={{ bgcolor: "#F8FAFC", border: "1px solid #E5E7EB", p: 2, borderRadius: 2, mb: 2 }}>
-              <Typography>{recs.summary}</Typography>
-            </Box>
+            {/* Controls */}
+            <Card sx={{ mb: 3, borderRadius: 3 }}>
+              <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                  <InputLabel id="month-select-label">Select Month</InputLabel>
+                  <Select
+                    labelId="month-select-label"
+                    label="Select Month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                  >
+                    {monthOptions.map((m) => (
+                      <MenuItem key={m} value={m}>
+                        {m}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-            <List>
-              {recs.insights.map((x, i) => (
-                <ListItem
-                  key={i}
-                  alignItems="flex-start"
+                <Box sx={{ ml: "auto" }}>
+                  <Chip
+                    sx={{ bgcolor: "white" }}
+                    label={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body2" color="text.secondary">
+                          Total Spending
+                        </Typography>
+                        <Typography fontWeight={700}>
+                          ${totalSpending.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Charts */}
+            <Grid container spacing={3} sx={{ mb: 3 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      Spending by Month
+                    </Typography>
+                    <Box sx={{ width: "100%", height: 320 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={monthlySpendingData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: 8,
+                              fontSize: 14,
+                            }}
+                            formatter={(v: number) => [`$${v.toLocaleString()}`, "Spending"]}
+                          />
+                          <Bar dataKey="amount" fill="#00786F" radius={[8, 8, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      Spending by Category — {selectedMonth}
+                    </Typography>
+                    <Box sx={{ width: "100%", height: 320 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={currentMonthData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={(props: PieLabelRenderProps) =>
+                              `${props.name ?? ""} ${((props.percent ?? 0) * 100).toFixed(0)}%`
+                            }
+                            outerRadius={100}
+                            dataKey="value"
+                          >
+                            {currentMonthData.map((entry, index) => (
+                              <Cell key={index} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: 8,
+                              fontSize: 14,
+                            }}
+                            formatter={(v: number) => `$${v.toLocaleString()}`}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+
+            {/* AI Insights */}
+            <Card sx={{ borderRadius: 3, mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  AI-Powered Insights — {selectedMonth}
+                </Typography>
+
+                <Box
                   sx={{
-                    border: "1px solid",
-                    borderColor:
-                      x.type === "warning" ? "#FED7AA" :
-                      x.type === "success" ? "#A7F3D0" : "#BFDBFE",
-                    bgcolor:
-                      x.type === "warning" ? "#FFF7ED" :
-                      x.type === "success" ? "#ECFDF5" : "#EFF6FF",
+                    bgcolor: "#F8FAFC",
+                    border: "1px solid #E5E7EB",
+                    p: 2,
                     borderRadius: 2,
-                    mb: 1,
+                    mb: 2,
                   }}
                 >
-                  <ListItemAvatar>
-                    <Avatar
+                  <Typography>{recs.summary}</Typography>
+                </Box>
+
+                <List>
+                  {recs.insights.map((x, i) => (
+                    <ListItem
+                      key={i}
+                      alignItems="flex-start"
                       sx={{
+                        border: "1px solid",
+                        borderColor:
+                          x.type === "warning"
+                            ? "#FED7AA"
+                            : x.type === "success"
+                            ? "#A7F3D0"
+                            : "#BFDBFE",
                         bgcolor:
-                          x.type === "warning" ? "#FDBA74" :
-                          x.type === "success" ? "#34D399" : "#60A5FA",
+                          x.type === "warning"
+                            ? "#FFF7ED"
+                            : x.type === "success"
+                            ? "#ECFDF5"
+                            : "#EFF6FF",
+                        borderRadius: 2,
+                        mb: 1,
                       }}
                     >
-                      {x.type === "warning" ? <WarningIcon /> : x.type === "success" ? <CheckCircleIcon /> : <TrendingUpIcon />}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText primaryTypographyProps={{ fontSize: 14 }} primary={x.text} />
-                </ListItem>
-              ))}
-            </List>
-          </CardContent>
-        </Card>
-
-        {/* Category Breakdown */}
-        <Card sx={{ borderRadius: 3 }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              Category Breakdown — {selectedMonth}
-            </Typography>
-
-            <Box sx={{ display: "grid", gap: 1.5 }}>
-              {currentMonthData.map((cat) => {
-                const pct = totalSpending ? (cat.value / totalSpending) * 100 : 0;
-                return (
-                  <Box
-                    key={cat.name}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      p: 1.5,
-                      bgcolor: "#F9FAFB",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 12,
-                        height: 12,
-                        borderRadius: "50%",
-                        bgcolor: cat.color,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Box sx={{ flex: 1 }}>
-                      <Typography fontSize={14} sx={{ mb: 0.5 }}>
-                        {cat.name}
-                      </Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={pct}
-                        sx={{
-                          height: 8,
-                          borderRadius: 999,
-                          "& .MuiLinearProgress-bar": { bgcolor: cat.color },
-                        }}
+                      <ListItemAvatar>
+                        <Avatar
+                          sx={{
+                            bgcolor:
+                              x.type === "warning"
+                                ? "#FDBA74"
+                                : x.type === "success"
+                                ? "#34D399"
+                                : "#60A5FA",
+                          }}
+                        >
+                          {x.type === "warning" ? (
+                            <WarningIcon />
+                          ) : x.type === "success" ? (
+                            <CheckCircleIcon />
+                          ) : (
+                            <TrendingUpIcon />
+                          )}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primaryTypographyProps={{ fontSize: 14 }}
+                        primary={x.text}
                       />
-                    </Box>
-                    <Box sx={{ textAlign: "right", minWidth: 140 }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                        {pct.toFixed(1)}%
-                      </Typography>
-                      <Typography fontWeight={600}>
-                        ${cat.value.toLocaleString()}
-                      </Typography>
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-          </CardContent>
-        </Card>
+                    </ListItem>
+                  ))}
+                </List>
+              </CardContent>
+            </Card>
+
+            {/* Category Breakdown */}
+            <Card sx={{ borderRadius: 3 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  Category Breakdown — {selectedMonth}
+                </Typography>
+
+                <Box sx={{ display: "grid", gap: 1.5 }}>
+                  {currentMonthData.map((cat) => {
+                    const pct = totalSpending ? (cat.value / totalSpending) * 100 : 0;
+                    return (
+                      <Box
+                        key={cat.name}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          p: 1.5,
+                          bgcolor: "#F9FAFB",
+                          borderRadius: 2,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            bgcolor: cat.color,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Box sx={{ flex: 1 }}>
+                          <Typography fontSize={14} sx={{ mb: 0.5 }}>
+                            {cat.name}
+                          </Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={pct}
+                            sx={{
+                              height: 8,
+                              borderRadius: 999,
+                              "& .MuiLinearProgress-bar": { bgcolor: cat.color },
+                            }}
+                          />
+                        </Box>
+                        <Box sx={{ textAlign: "right", minWidth: 140 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mr: 1 }}
+                          >
+                            {pct.toFixed(1)}%
+                          </Typography>
+                          <Typography fontWeight={600}>
+                            ${cat.value.toLocaleString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

@@ -59,6 +59,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { convertToReadableDate } from "../helpers";
 
+import Sidebar from "../components/Sidebar";
+
 const drawerWidth = 240;
 
 const TransactionsPage: React.FC = () => {
@@ -248,108 +250,7 @@ const TransactionsPage: React.FC = () => {
     return "#4CAF50";
   };
   
-  const drawer = (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <Toolbar sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            bgcolor: "#00796B",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <AccountBalanceIcon sx={{ color: "white" }} />
-        </Box>
-        <Typography variant="h6" sx={{ color: "#00796B", fontWeight: 600 }}>
-          Commerce Bank
-        </Typography>
-      </Toolbar>
-
-      <Divider />
-      <Typography
-        variant="caption"
-        sx={{ px: 2, py: 1, color: "text.secondary" }}
-      >
-        Menu
-      </Typography>
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate("/home")}>
-            <ListItemIcon>
-              <DashboardIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton selected sx={{ bgcolor: "#E0F2F1" }}>
-            <ListItemIcon>
-              <SwapHorizIcon sx={{ color: "#00796B" }} />
-            </ListItemIcon>
-            <ListItemText primary="Transactions" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <TrendingUpIcon />
-            </ListItemIcon>
-            <ListItemText primary="Analytics" />
-          </ListItemButton>
-        </ListItem>
-      </List>
-
-      <Divider />
-      <Typography
-        variant="caption"
-        sx={{ px: 2, py: 1, color: "text.secondary" }}
-      >
-        Other
-      </Typography>
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Settings" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <HelpIcon />
-            </ListItemIcon>
-            <ListItemText primary="Help & Support" />
-          </ListItemButton>
-        </ListItem>
-      </List>
-
-      <Box sx={{ mt: "auto", p: 2 }}>
-        <Card sx={{ bgcolor: "#F1F1F1", borderRadius: 2 }}>
-          <CardContent>
-            <Box display="flex" alignItems="center" gap={2}>
-              <Avatar sx={{ bgcolor: "#00796B" }}>
-                {currentUser?.email?.[0].toUpperCase() || "J"}
-              </Avatar>
-              <Box flex={1}>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {currentUser?.displayName || "John Doe"}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {currentUser?.email || "john.doe@email.com"}
-                </Typography>
-              </Box>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-    </Box>
-  );
+  
 
   return (
     <Box
@@ -406,7 +307,7 @@ const TransactionsPage: React.FC = () => {
               "& .MuiDrawer-paper": { width: drawerWidth },
             }}
           >
-            {drawer}
+            <Sidebar />
           </Drawer>
           <Drawer
             variant="permanent"
@@ -416,7 +317,7 @@ const TransactionsPage: React.FC = () => {
             }}
             open
           >
-            {drawer}
+           <Sidebar />
           </Drawer>
         </Box>
 
