@@ -15,6 +15,10 @@ import {
   ListItemAvatar,
   ListItemText,
   LinearProgress,
+  TextField,
+  Button,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";// using MUI Grid v2 (matches your HomePage)
 import {
@@ -22,6 +26,8 @@ import {
   WarningAmber as WarningIcon,
   CheckCircle as CheckCircleIcon,
   AttachMoney as MoneyIcon,
+  Send as SendIcon,
+  Psychology as PsychologyIcon,
 } from "@mui/icons-material";
 
 import {
@@ -37,6 +43,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { PieLabelRenderProps } from "recharts";
+import { useAuth } from "../contexts/AuthContext";
 // -------------------- Mock data (same as your Figma code) --------------------
 const monthlySpendingData = [
   { month: "Jan", amount: 3200 },
@@ -214,7 +221,12 @@ const monthOptions = Object.keys(categoryData);
 
 // -------------------- Page --------------------
 const AnalyticsPage: React.FC = () => {
+  const { currentUser } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState<string>("October");
+  const [llmQuery, setLlmQuery] = useState<string>("");
+  const [llmResponse, setLlmResponse] = useState<string>("");
+  const [isLoadingLlm, setIsLoadingLlm] = useState<boolean>(false);
+  const [llmError, setLlmError] = useState<string>("");
 
   const currentMonthData = categoryData[selectedMonth] || [];
   const recs = recommendations[selectedMonth];
@@ -222,6 +234,60 @@ const AnalyticsPage: React.FC = () => {
     () => currentMonthData.reduce((sum, c) => sum + c.value, 0),
     [currentMonthData]
   );
+
+  // Map month name to month number
+  const monthNameToNumber: Record<string, number> = {
+    January: 1, February: 2, March: 3, April: 4,
+    May: 5, June: 6, July: 7, August: 8,
+    September: 9, October: 10, November: 11, December: 12
+  };
+
+  // Function to call LLM endpoint
+  const handleLlmQuery = async () => {
+    if (!llmQuery.trim()) {
+      setLlmError("Please enter a query");
+      return;
+    }
+
+    setIsLoadingLlm(true);
+    setLlmError("");
+    setLlmResponse("");
+
+    try {
+      // Get Firebase auth token
+      const token = await currentUser?.getIdToken();
+      
+      if (!token) {
+        throw new Error("You must be logged in to use this feature");
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}api/llm/query`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          query: llmQuery,
+          month: monthNameToNumber[selectedMonth] || 10,
+          year: 2024,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.title || "Failed to get financial advice");
+      }
+
+      const data = await response.json();
+      setLlmResponse(data.response || "No response received");
+    } catch (error) {
+      console.error("Error calling LLM endpoint:", error);
+      setLlmError(error instanceof Error ? error.message : "An error occurred while processing your query");
+    } finally {
+      setIsLoadingLlm(false);
+    }
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#F9FAFB", px: { xs: 3, sm: 5, md: 8 }, py: 4 }}>
@@ -385,6 +451,88 @@ const AnalyticsPage: React.FC = () => {
                 </ListItem>
               ))}
             </List>
+          </CardContent>
+        </Card>
+
+        {/* LLM Financial Advisor */}
+        <Card sx={{ borderRadius: 3, mb: 3 }}>
+          <CardContent>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+              <Box sx={{ bgcolor: "#E0E7FF", p: 1, borderRadius: 2, display: "inline-flex" }}>
+                <PsychologyIcon sx={{ color: "#4F46E5" }} />
+              </Box>
+              <Typography variant="h6" fontWeight={700}>
+                Ask Financial Advisor
+              </Typography>
+            </Box>
+            
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Get personalized financial advice based on your spending data for {selectedMonth}
+            </Typography>
+
+            <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Ask a question about your finances... (e.g., 'How can I reduce my spending?' or 'What areas should I focus on?')"
+                value={llmQuery}
+                onChange={(e) => setLlmQuery(e.target.value)}
+                disabled={isLoadingLlm}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleLlmQuery();
+                  }
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+            </Box>
+
+            <Button
+              variant="contained"
+              onClick={handleLlmQuery}
+              disabled={isLoadingLlm || !llmQuery.trim()}
+              startIcon={isLoadingLlm ? <CircularProgress size={20} /> : <SendIcon />}
+              sx={{
+                bgcolor: "#00786F",
+                "&:hover": { bgcolor: "#005F58" },
+                textTransform: "none",
+                borderRadius: 2,
+                px: 3,
+              }}
+            >
+              {isLoadingLlm ? "Getting Advice..." : "Get Advice"}
+            </Button>
+
+            {llmError && (
+              <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+                {llmError}
+              </Alert>
+            )}
+
+            {llmResponse && (
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 3,
+                  bgcolor: "#F0FDF4",
+                  border: "2px solid #86EFAC",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, color: "#166534" }}>
+                  Financial Advisor Response:
+                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", color: "#15803D" }}>
+                  {llmResponse}
+                </Typography>
+              </Box>
+            )}
           </CardContent>
         </Card>
 
