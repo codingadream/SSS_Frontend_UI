@@ -70,6 +70,7 @@ const TransactionsPage: React.FC = () => {
     useState<TransactionResponse | null>(null);
   const [userData, setUserData] = useState<UserResponse | null>(null);
 
+
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -238,7 +239,6 @@ const TransactionsPage: React.FC = () => {
     }
   };
 
-  
   const getCategoryColor = (category: string) => {
     if (category === "Income") return "#4CAF50";
     if (category === "Shopping") return "#4CAF50";
@@ -247,7 +247,7 @@ const TransactionsPage: React.FC = () => {
     if (category === "Transportation") return "#4CAF50";
     return "#4CAF50";
   };
-  
+
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Toolbar sx={{ display: "flex", alignItems: "center", gap: 2, py: 2 }}>
@@ -458,7 +458,8 @@ const TransactionsPage: React.FC = () => {
                     label="Filter by Month"
                     onChange={(e) => {
                       setSelectedMonth(e.target.value);
-                      if (e.target.value != "all") fetchTransactions(e.target.value);
+                      if (e.target.value != "all")
+                        fetchTransactions(e.target.value);
                       else fetchTransactions(null);
                     }}
                   >
