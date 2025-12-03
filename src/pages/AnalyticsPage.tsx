@@ -287,21 +287,18 @@ const AnalyticsPage: React.FC = () => {
         throw new Error("You must be logged in to use this feature");
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}api/llm/query`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            query: llmQuery,
-            month: monthNameToNumber[selectedMonth] || 10,
-            year: 2024,
-          }),
-        }
-      );
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}api/llm/query`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          query: llmQuery,
+          month: monthNameToNumber[selectedMonth] || 10,
+          year: new Date().getFullYear(),
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
