@@ -48,6 +48,11 @@ export interface UserResponse {
   transactionMonths: string[];
 }
 
+export interface SpendingInAMonth {
+  month: Date;
+  spending: number;
+}
+
 
 export interface SyncResponse {
   message: string;
