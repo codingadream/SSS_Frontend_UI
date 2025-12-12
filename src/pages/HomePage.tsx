@@ -17,6 +17,7 @@ import {
   CardContent,
   Avatar,
   Grid,
+  Button,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -267,12 +268,6 @@ const HomePage: React.FC = () => {
       icon: <SwapHorizIcon sx={{ fontSize: 36, color: "#4CAF50" }} />,
       route: "/transactions",
     },
-    {
-      id: "3",
-      title: "Edit Spending Limits",
-      icon: <AddIcon sx={{ fontSize: 36, color: "#FFC107" }} />,
-      route: "/limits",
-    },
   ];
 
   const getAccountColor = (type: string) => {
@@ -338,9 +333,13 @@ const HomePage: React.FC = () => {
           <Typography variant="h6" sx={{ flexGrow: 1, color: "text.primary" }}>
             Welcome back, {currentUser?.displayName?.split(" ")[0] || "John"}
           </Typography>
-          <IconButton onClick={handleLogout} sx={{ color: "#00796B" }}>
-            <SettingsIcon />
-          </IconButton>
+          <Button
+            variant="contained"
+            onClick={handleLogout}
+            sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
+          >
+            Log Out
+          </Button>
         </Toolbar>
       </AppBar>
 
@@ -462,7 +461,7 @@ const HomePage: React.FC = () => {
               </Typography>
               <Grid container spacing={3} sx={{ mb: 5 }}>
                 {quickActions.map((action) => (
-                  <Grid key={action.id} size={{ xs: 12, sm: 4 }}>
+                  <Grid key={action.id} size={{ xs: 12, sm: 6 }}>
                     <Card
                       onClick={() => navigate(action.route)}
                       sx={{
