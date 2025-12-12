@@ -39,12 +39,14 @@ import { callSync } from "../helpers";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
+  signOut,
   updateEmail,
   updatePassword,
   updateProfile,
 } from "firebase/auth";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
+import { auth } from "../firebase/firebase";
 
 const drawerWidth = 240;
 
@@ -283,6 +285,16 @@ const SettingsPageNav: React.FC = () => {
     setEmail(userData?.email || "john.doe@email.com");
   }, [userData]);
 
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -316,13 +328,30 @@ const SettingsPageNav: React.FC = () => {
           <Box sx={{ maxWidth: 1200, mx: "auto" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
               <SettingsIcon sx={{ color: "#00695C" }} />
-              <Typography
-                variant="h5"
-                fontWeight={700}
-                sx={{ color: "#0b1721" }}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  gap: 1.5,
+                }}
               >
-                Profile Settings
-              </Typography>
+                <Typography
+                  variant="h5"
+                  fontWeight={700}
+                  sx={{ color: "#0b1721" }}
+                >
+                  Profile Settings
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={handleLogout}
+                  sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
+                >
+                  Log Out
+                </Button>
+              </Box>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
               Manage your account settings and preferences

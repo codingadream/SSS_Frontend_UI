@@ -66,6 +66,8 @@ import {
 } from "../helpers";
 import { useNavigate } from "react-router-dom";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase/firebase";
 
 // Keep drawerWidth consistent with other pages that use Sidebar
 const drawerWidth = 240;
@@ -336,6 +338,15 @@ const AnalyticsPage: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -383,9 +394,21 @@ const AnalyticsPage: React.FC = () => {
               >
                 <MoneyIcon sx={{ color: "#00786F" }} />
               </Box>
-              <Typography variant="h5" fontWeight={700}>
-                Budget Breakdown
-              </Typography>
+
+              <Box
+                sx={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 1.5}}
+              >
+                <Typography variant="h5" fontWeight={700}>
+                  Budget Breakdown
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={handleLogout}
+                  sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
+                >
+                  Log Out
+                </Button>
+              </Box>  
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Analyze your spending patterns and get personalized insights

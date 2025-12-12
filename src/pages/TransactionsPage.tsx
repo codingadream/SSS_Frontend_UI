@@ -13,6 +13,7 @@ import {
   FormControl,
   InputLabel,
   IconButton,
+  Button,
 } from "@mui/material";
 import {
   SwapHoriz as SwapHorizIcon,
@@ -292,9 +293,13 @@ const TransactionsPage: React.FC = () => {
                   View and manage all your transactions
                 </Typography>
               </Box>
-              <IconButton onClick={handleLogout} sx={{ color: "#00796B" }}>
-                <SettingsIcon />
-              </IconButton>
+              <Button
+                variant="contained"
+                onClick={handleLogout}
+                sx={{ bgcolor: "#00695C", "&:hover": { bgcolor: "#075e54" } }}
+              >
+                Log Out
+              </Button>
             </Box>
 
             {/* Filters (currently only month filter) */}
