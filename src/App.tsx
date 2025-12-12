@@ -13,24 +13,29 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import SettingsPageNav from "./pages/SettingsPageNav";
 import TransactionsPage from "./pages/TransactionsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
+import LinkAccounts from "./pages/LinkAccounts";
+import ErrorPage from "./pages/ErrorPage";
 
 function App() {
   return (
     <AuthProvider>
-      <Toaster /> 
-        <Router>
-          <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignUpPage />} />
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/transactions" element={<TransactionsPage />} />
-            <Route path="/settings-nav" element={<SettingsPageNav />} />
-            <Route path="/analytics" element={<AnalyticsPage/>} />
-          </Routes>
-        </Router>
+      <Toaster />
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/settings-nav" element={<SettingsPageNav />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/link-accounts" element={<LinkAccounts />} />
+          <Route path="/error" element={<ErrorPage />} />
+          
+        </Routes>
+      </Router>
     </AuthProvider>
   );
 }

@@ -31,7 +31,7 @@ export const callSync = async (
 
     // --- SUCCESS TOAST ---
     toast.success(
-      response.data.message || "Data from Plaid synced successfully!",
+      response.data.message || "Data synced successfully!",
       {
         duration: 3000,
       }
