@@ -102,8 +102,6 @@ const Sidebar: React.FC = () => {
         </Typography>
       </Toolbar>
 
-      <Divider />
-
       {/* Main navigation section */}
       <Typography
         variant="caption"
@@ -153,19 +151,8 @@ const Sidebar: React.FC = () => {
             <ListItemText primary="Analytics" />
           </ListItemButton>
         </ListItem>
-      </List>
 
-      <Divider />
-
-      {/* Secondary section */}
-      <Typography
-        variant="caption"
-        sx={{ px: 2, py: 1, color: "text.secondary", fontWeight: 600 }}
-      >
-        Other
-      </Typography>
-      <List>
-        {/* Settings */}
+         {/* Settings */}
         <ListItem disablePadding>
           <ListItemButton
             selected={isActive("/settings-nav")}
@@ -179,15 +166,6 @@ const Sidebar: React.FC = () => {
           </ListItemButton>
         </ListItem>
 
-        {/* Help & Support (no route yet, just static) */}
-        <ListItem disablePadding>
-          <ListItemButton sx={navItemSx(false)}>
-            <ListItemIcon>
-              <HelpIcon />
-            </ListItemIcon>
-            <ListItemText primary="Help & Support" />
-          </ListItemButton>
-        </ListItem>
       </List>
 
       {/* User info card at the bottom */}
