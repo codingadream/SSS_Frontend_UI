@@ -24,6 +24,10 @@ import {
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
+import axios from "axios";
+import type { AccountsResponse } from "../types/types";
+import toast from "react-hot-toast";
+import { callSync } from "../helpers";
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -35,7 +39,35 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleTogglePasswordVisibility = () => setShowPassword(!showPassword);
-  const handleToggleConfirmVisibility = () => setShowConfirmPassword(!showConfirmPassword);
+  const handleToggleConfirmVisibility = () =>
+    setShowConfirmPassword(!showConfirmPassword);
+
+  const getAccounts = async (idToken) => {
+    try {
+      const response = await axios.get<AccountsResponse>(
+        `${import.meta.env.VITE_BASE_URL}api/accounts`,
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+      return response.data.accounts;
+    } catch (err) {
+      let errorMessage = "Failed to fetch accounts.";
+
+      if (axios.isAxiosError(err)) {
+        // Try to extract a specific error message from the server
+        errorMessage =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          errorMessage;
+      }
+
+      console.error("Fetch Accounts Error:", err);
+      navigate("/error");
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +83,11 @@ export default function SignUpPage() {
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const user = userCredential.user;
 
       if (name) {
@@ -59,7 +95,7 @@ export default function SignUpPage() {
       }
 
       alert("Account created successfully!");
-      navigate("/home");
+      navigate("/link-accounts");
     } catch (error: any) {
       console.error("Sign-up error:", error);
       alert("Sign-up failed: " + error.message);
@@ -109,10 +145,16 @@ export default function SignUpPage() {
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "center" }}>
-          <Card sx={{ width: "100%", maxWidth: 480, boxShadow: 4, borderRadius: 3 }}>
+          <Card
+            sx={{ width: "100%", maxWidth: 480, boxShadow: 4, borderRadius: 3 }}
+          >
             <CardContent sx={{ p: 4 }}>
               <Box sx={{ textAlign: "center", mb: 4 }}>
-                <Typography variant="h4" fontWeight="bold" sx={{ color: "#1b6d6a", mb: 1 }}>
+                <Typography
+                  variant="h4"
+                  fontWeight="bold"
+                  sx={{ color: "#1b6d6a", mb: 1 }}
+                >
                   Create Account
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
@@ -174,7 +216,10 @@ export default function SignUpPage() {
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton onClick={handleTogglePasswordVisibility} edge="end">
+                        <IconButton
+                          onClick={handleTogglePasswordVisibility}
+                          edge="end"
+                        >
                           {showPassword ? <VisibilityOff /> : <Visibility />}
                         </IconButton>
                       </InputAdornment>
@@ -199,8 +244,15 @@ export default function SignUpPage() {
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton onClick={handleToggleConfirmVisibility} edge="end">
-                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        <IconButton
+                          onClick={handleToggleConfirmVisibility}
+                          edge="end"
+                        >
+                          {showConfirmPassword ? (
+                            <VisibilityOff />
+                          ) : (
+                            <Visibility />
+                          )}
                         </IconButton>
                       </InputAdornment>
                     ),
@@ -251,7 +303,9 @@ export default function SignUpPage() {
       </Container>
 
       {/* Footer */}
-      <Box sx={{ backgroundColor: "#1b6d6a", color: "white", py: 3, mt: "auto" }}>
+      <Box
+        sx={{ backgroundColor: "#1b6d6a", color: "white", py: 3, mt: "auto" }}
+      >
         <Container maxWidth="lg">
           <Box sx={{ textAlign: "center" }}>
             <Typography variant="body2" sx={{ opacity: 0.8 }}>

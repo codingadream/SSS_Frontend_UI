@@ -46,6 +46,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { convertToReadableDate } from "../helpers";
 import Sidebar from "../components/Sidebar";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 // Fixed sidebar width, same as HomePage and SettingsPageNav
 const drawerWidth = 240;
@@ -112,9 +113,8 @@ const TransactionsPage: React.FC = () => {
           errorMessage;
       }
 
-      toast.error(errorMessage);
       console.error("Fetch Transactions Error:", err);
-      setTransactionsData(null);
+      navigate("/error");
     } finally {
       setLoading(false);
     }
@@ -151,9 +151,8 @@ const TransactionsPage: React.FC = () => {
         errorMessage = err.message;
       }
 
-      toast.error(errorMessage);
       console.error("Fetch User Error:", err);
-      setUserData(null);
+      navigate("/error");
     } finally {
       setLoading(false);
     }
@@ -255,7 +254,9 @@ const TransactionsPage: React.FC = () => {
       </Box>
 
       {/* Right main content area */}
-      {!loading ? (
+      {loading || !transactionsData || !userData ? (
+        <LoadingSpinner />
+      ) : (
         <Box
           component="main"
           sx={{
@@ -465,18 +466,6 @@ const TransactionsPage: React.FC = () => {
               </CardContent>
             </Card>
           </Box>
-        </Box>
-      ) : (
-        // Simple loading fallback when fetching data
-        <Box
-          sx={{
-            flexGrow: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div>loading</div>
         </Box>
       )}
     </Box>
