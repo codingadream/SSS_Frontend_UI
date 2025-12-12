@@ -236,13 +236,13 @@ const HomePage: React.FC = () => {
             year
           );
           const sum = transactions.reduce((sum, tx) => {
-            if (tx.amount < 0) {
+            if (tx.amount > 0) {
               return sum + Math.abs(tx.amount);
             }
             return sum;
           }, 0);
-          _spendingData.push({
-            month: new Date(year, monthIndex, 1),
+          _spendingData.unshift({
+            month: new Date(year, monthIndex - 1, 1),
             spending: sum,
           });
         });
@@ -252,6 +252,7 @@ const HomePage: React.FC = () => {
         });
         setMaxSpending(max);
         setSpendingData(_spendingData);
+        console.log(_spendingData);
       }
     }
   }, [transactionsData, userData]);
@@ -558,7 +559,7 @@ const HomePage: React.FC = () => {
                             display: "flex",
                             alignItems: "flex-end",
                             gap: 3,
-                            height: 220,
+                            height: 250,
                             position: "relative",
                             pb: 4,
                             borderBottom: "2px solid #eee",
@@ -569,20 +570,19 @@ const HomePage: React.FC = () => {
                           <Box
                             sx={{
                               position: "absolute",
-                              bottom: 0,
                               left: 0,
                               right: 0,
-                              height:
-                                (maxSpending / maxSpending) * 220, /*TODO add limit */
+                              height: 207, /*TODO add limit */
                               borderTop: "2px dashed rgba(255, 107, 107, 0.5)",
                               zIndex: 0,
                               pointerEvents: "none",
                             }}
                           />
 
-                          {spendingData.map((data, i) => {
+                          {
+                          spendingData.map((data, i) => {
                             const barHeight =
-                              (data.spending / maxSpending) * 220;
+                              (data.spending / maxSpending) * 150;
                             const percentage = Math.round(
                               (data.spending / maxSpending) * 100 //TODO add limit
                             );
@@ -611,7 +611,7 @@ const HomePage: React.FC = () => {
                                   <Box
                                     sx={{
                                       position: "absolute",
-                                      bottom: barHeight + 50,
+                                      bottom: barHeight,
                                       left: "50%",
                                       transform: "translateX(-50%)",
                                       bgcolor: "#333",
@@ -675,14 +675,14 @@ const HomePage: React.FC = () => {
                                       : barColor,
                                   }}
                                 >
-                                  ${maxSpending.toLocaleString("en-us")}
+                                  ${data.spending.toLocaleString("en-us")}
                                 </Typography>
 
                                 <Box
                                   sx={{
                                     width: "100%",
                                     minHeight: 8,
-                                    height: `${barHeight}px`,
+                                    height: barHeight,
                                     bgcolor: barColor,
                                     borderRadius: "8px 8px 0 0",
                                     position: "relative",
@@ -715,7 +715,7 @@ const HomePage: React.FC = () => {
                                       mb: 0.25,
                                     }}
                                   >
-                                    {getMonthAbbr(data.month.getMonth())}
+                                    {getMonthAbbr(data.month.getMonth() + 1)}
                                   </Typography>
                                   <Typography
                                     variant="caption"
