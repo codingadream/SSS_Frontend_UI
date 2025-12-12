@@ -53,6 +53,11 @@ export interface SpendingInAMonth {
   spending: number;
 }
 
+export interface SpendingInAMonthFormatted {
+  month: string;
+  spending: number;
+}
+
 
 export interface SyncResponse {
   message: string;

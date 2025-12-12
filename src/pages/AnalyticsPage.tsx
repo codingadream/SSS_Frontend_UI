@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/AnalyticsPage.tsx
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -24,7 +25,6 @@ import {
   Grid,
 } from "@mui/material";
 // Use MUI Grid v2 (same pattern as HomePage/Settings/Transactions)
-
 
 import {
   TrendingUp as TrendingUpIcon,
@@ -50,26 +50,30 @@ import {
 import type { PieLabelRenderProps } from "recharts";
 import { useAuth } from "../contexts/AuthContext";
 import Sidebar from "../components/Sidebar";
+import type {
+  MonthRequest,
+  SpendingInAMonth,
+  SpendingInAMonthFormatted,
+  TransactionResponse,
+  UserResponse,
+} from "../types/types";
+import axios from "axios";
+import toast from "react-hot-toast";
+import {
+  convertToReadableDate,
+  getMonthAbbr,
+  groupTransactionsByYearMonthMap,
+} from "../helpers";
 
 // Keep drawerWidth consistent with other pages that use Sidebar
 const drawerWidth = 240;
 
-// -------------------- Mock spending data by month --------------------
-const monthlySpendingData = [
-  { month: "Jan", amount: 3200 },
-  { month: "Feb", amount: 2800 },
-  { month: "Mar", amount: 3600 },
-  { month: "Apr", amount: 3100 },
-  { month: "May", amount: 4200 },
-  { month: "Jun", amount: 3800 },
-  { month: "Jul", amount: 3500 },
-  { month: "Aug", amount: 4100 },
-  { month: "Sep", amount: 3900 },
-  { month: "Oct", amount: 4500 },
-];
-
 // -------------------- Mock spending by category for each month --------------------
-const categoryData: Record<string, Array<{ name: string; value: number; color: string }>> = {
+/*
+const categoryData: Record<
+  string,
+  Array<{ name: string; value: number; color: string }>
+> = {
   January: [
     { name: "Shopping", value: 1200, color: "#00786F" },
     { name: "Food & Dining", value: 800, color: "#10B981" },
@@ -141,58 +145,114 @@ const categoryData: Record<string, Array<{ name: string; value: number; color: s
     { name: "Utilities", value: 300, color: "#CBFBF1" },
   ],
 };
+*/
 
 // -------------------- Static recommendations copy --------------------
 const recommendations: Record<
   string,
-  { summary: string; insights: Array<{ type: "warning" | "success" | "info"; text: string }> }
+  {
+    summary: string;
+    insights: Array<{ type: "warning" | "success" | "info"; text: string }>;
+  }
 > = {
   January: {
-    summary: "Great start to the year! Your spending is well-balanced across categories.",
+    summary:
+      "Great start to the year! Your spending is well-balanced across categories.",
     insights: [
-      { type: "success", text: "Shopping expenses are reasonable at $1,200, which is 37.5% of total spending." },
-      { type: "success", text: "Food & Dining costs are within healthy limits at $800." },
-      { type: "info", text: "Consider setting aside more for savings this month." },
+      {
+        type: "success",
+        text: "Shopping expenses are reasonable at $1,200, which is 37.5% of total spending.",
+      },
+      {
+        type: "success",
+        text: "Food & Dining costs are within healthy limits at $800.",
+      },
+      {
+        type: "info",
+        text: "Consider setting aside more for savings this month.",
+      },
     ],
   },
   February: {
-    summary: "Excellent work! You reduced spending by 12.5% compared to January.",
+    summary:
+      "Excellent work! You reduced spending by 12.5% compared to January.",
     insights: [
-      { type: "success", text: "You've successfully cut shopping expenses by $300 from last month." },
-      { type: "success", text: "Overall spending trend is downward - keep it up!" },
-      { type: "info", text: "Transportation costs increased slightly. Consider carpooling or public transit." },
+      {
+        type: "success",
+        text: "You've successfully cut shopping expenses by $300 from last month.",
+      },
+      {
+        type: "success",
+        text: "Overall spending trend is downward - keep it up!",
+      },
+      {
+        type: "info",
+        text: "Transportation costs increased slightly. Consider carpooling or public transit.",
+      },
     ],
   },
   March: {
     summary: "Spending increased this month. Review your shopping habits.",
     insights: [
-      { type: "warning", text: "Shopping expenses jumped to $1,500, a 67% increase from February." },
+      {
+        type: "warning",
+        text: "Shopping expenses jumped to $1,500, a 67% increase from February.",
+      },
       { type: "warning", text: "Total spending is up 28.6% - highest in Q1." },
-      { type: "info", text: "Food & Dining also increased. Try meal prepping to reduce costs." },
+      {
+        type: "info",
+        text: "Food & Dining also increased. Try meal prepping to reduce costs.",
+      },
     ],
   },
   April: {
     summary: "Back on track! You've reined in spending compared to March.",
     insights: [
-      { type: "success", text: "Shopping costs decreased by $400, showing good self-control." },
+      {
+        type: "success",
+        text: "Shopping costs decreased by $400, showing good self-control.",
+      },
       { type: "success", text: "Overall spending down 13.9% from last month." },
-      { type: "info", text: "Entertainment spending is stable. Consider free activities to reduce further." },
+      {
+        type: "info",
+        text: "Entertainment spending is stable. Consider free activities to reduce further.",
+      },
     ],
   },
   May: {
-    summary: "Highest spending month so far. Summer activities may be impacting your budget.",
+    summary:
+      "Highest spending month so far. Summer activities may be impacting your budget.",
     insights: [
-      { type: "warning", text: "Total spending reached $4,200, a 35.5% increase from April." },
-      { type: "warning", text: "Shopping and Food & Dining both saw significant increases." },
-      { type: "info", text: "Set stricter budget limits for June to compensate." },
+      {
+        type: "warning",
+        text: "Total spending reached $4,200, a 35.5% increase from April.",
+      },
+      {
+        type: "warning",
+        text: "Shopping and Food & Dining both saw significant increases.",
+      },
+      {
+        type: "info",
+        text: "Set stricter budget limits for June to compensate.",
+      },
     ],
   },
   June: {
-    summary: "Spending decreased slightly but remains elevated. Continue monitoring closely.",
+    summary:
+      "Spending decreased slightly but remains elevated. Continue monitoring closely.",
     insights: [
-      { type: "warning", text: "Still spending $3,800, which is 9.5% below May but 22.6% above April." },
-      { type: "info", text: "Entertainment costs are up. Look for free summer events." },
-      { type: "success", text: "Shopping expenses dropped by $300 - good progress!" },
+      {
+        type: "warning",
+        text: "Still spending $3,800, which is 9.5% below May but 22.6% above April.",
+      },
+      {
+        type: "info",
+        text: "Entertainment costs are up. Look for free summer events.",
+      },
+      {
+        type: "success",
+        text: "Shopping expenses dropped by $300 - good progress!",
+      },
     ],
   },
   July: {
@@ -204,39 +264,255 @@ const recommendations: Record<
     ],
   },
   August: {
-    summary: "Spending increased again. Back-to-school season may be affecting your budget.",
+    summary:
+      "Spending increased again. Back-to-school season may be affecting your budget.",
     insights: [
       { type: "warning", text: "Total spending up 17.1% to $4,100." },
       { type: "warning", text: "Shopping costs rose $300 from July." },
-      { type: "info", text: "Consider bulk buying for better deals on recurring expenses." },
+      {
+        type: "info",
+        text: "Consider bulk buying for better deals on recurring expenses.",
+      },
     ],
   },
   September: {
     summary: "Spending stabilized but remains elevated. Focus on consistency.",
     insights: [
-      { type: "info", text: "Spending decreased slightly to $3,900, down 4.9% from August." },
-      { type: "success", text: "Shopping costs are down $100 - small wins count!" },
-      { type: "warning", text: "Still 11.4% above July levels. Aim for further reduction." },
+      {
+        type: "info",
+        text: "Spending decreased slightly to $3,900, down 4.9% from August.",
+      },
+      {
+        type: "success",
+        text: "Shopping costs are down $100 - small wins count!",
+      },
+      {
+        type: "warning",
+        text: "Still 11.4% above July levels. Aim for further reduction.",
+      },
     ],
   },
   October: {
-    summary: "Highest spending month of the year. Holiday season approaching - plan accordingly.",
+    summary:
+      "Highest spending month of the year. Holiday season approaching - plan accordingly.",
     insights: [
-      { type: "warning", text: "Spending reached $4,500, up 15.4% from September." },
+      {
+        type: "warning",
+        text: "Spending reached $4,500, up 15.4% from September.",
+      },
       { type: "warning", text: "All categories increased except Utilities." },
-      { type: "info", text: "Create a strict holiday budget now to avoid overspending in Nov–Dec." },
+      {
+        type: "info",
+        text: "Create a strict holiday budget now to avoid overspending in Nov–Dec.",
+      },
+    ],
+  },
+  all: {
+    summary:
+      "Highest spending month of the year. Holiday season approaching - plan accordingly.",
+    insights: [
+      {
+        type: "warning",
+        text: "Spending reached $4,500, up 15.4% from September.",
+      },
+      { type: "warning", text: "All categories increased except Utilities." },
+      {
+        type: "info",
+        text: "Create a strict holiday budget now to avoid overspending in Nov–Dec.",
+      },
     ],
   },
 };
 
-const monthOptions = Object.keys(categoryData);
+//const monthOptions = Object.keys(categoryData);
+
+const COLORS = [
+  "#00786F", // Teal
+  "#10B981", // Emerald
+  "#60D5C0", // Soft Teal
+  "#93E4D8", // Light Teal
+  "#CBFBF1", // Pale Teal
+  "#F59E0B", // Amber
+  "#EF4444", // Red
+  "#3B82F6", // Blue
+];
 
 // -------------------- Analytics Page --------------------
 const AnalyticsPage: React.FC = () => {
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [loading, setLoading] = useState(false);
+
+  const [transactionsData, setTransactionsData] =
+    useState<TransactionResponse | null>(null);
+  const [userData, setUserData] = useState<UserResponse | null>(null);
+  const [transactionMap, setTransactionMap] = useState<Map<any, any> | null>(
+    null
+  );
+  const [spendingData, setSpendingData] = useState<
+    SpendingInAMonthFormatted[] | null
+  >(null);
+  const [categoryData, setCategoryData] = useState(null);
+  const [totalSpent, setTotalSpent] = useState(0);
+
   const { currentUser } = useAuth();
 
-  // Selected month for charts & insights
-  const [selectedMonth, setSelectedMonth] = useState<string>("October");
+  // Fetch transactions for a specific month (or all months if month is null)
+  const fetchTransactions = async (month: string | null) => {
+    setLoading(true);
+
+    const requestBody: MonthRequest = {
+      MonthYear: month,
+    };
+
+    try {
+      const token = await currentUser?.getIdToken();
+      const response = await axios.post<TransactionResponse>(
+        `${import.meta.env.VITE_BASE_URL}api/transactions`,
+        requestBody,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setTransactionsData(response.data);
+    } catch (err) {
+      let errorMessage = "Failed to fetch transactions.";
+
+      if (axios.isAxiosError(err)) {
+        // Try to extract server error message
+        errorMessage =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          errorMessage;
+      }
+
+      toast.error(errorMessage);
+      console.error("Fetch Transactions Error:", err);
+      setTransactionsData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch user data (used for month list in the filter)
+  const fetchUser = async () => {
+    setLoading(true);
+
+    try {
+      const token = await currentUser?.getIdToken();
+
+      const response = await axios.get<UserResponse>(
+        `${import.meta.env.VITE_BASE_URL}api/user`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setUserData(response.data);
+      console.log("Successfully fetched user data.");
+    } catch (err) {
+      let errorMessage = "Failed to fetch user data.";
+
+      if (axios.isAxiosError(err)) {
+        const axiosError = err;
+        errorMessage =
+          axiosError.response?.data?.detail ||
+          axiosError.response?.data?.message ||
+          errorMessage;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      toast.error(errorMessage);
+      console.error("Fetch User Error:", err);
+      setUserData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load: get all transactions + user data
+  useEffect(() => {
+    fetchTransactions(null);
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    if (transactionsData?.transactionCount ?? 0 > 0) {
+      setTransactionMap(
+        groupTransactionsByYearMonthMap(transactionsData!.transactions)
+      );
+      console.log(groupTransactionsByYearMonthMap(transactionsData!.transactions));
+      setTotalSpent(
+        transactionsData?.transactions
+          .filter((t) => t.amount > 0)
+          .reduce((sum, t) => sum + Math.abs(t.amount), 0) ?? 0
+      );
+    }
+  }, [transactionsData]);
+
+  useEffect(() => {
+    if (selectedYear && transactionMap) {
+      const _spendingData: Array<SpendingInAMonthFormatted> = [];
+      Array.from(transactionMap!.get(selectedYear)).forEach(
+        ([month, transactions]) => {
+          console.log(month);
+          const sum = transactions.reduce((sum, tx) => {
+            if (tx.amount > 0) {
+              return sum + Math.abs(tx.amount);
+            }
+            return sum;
+          }, 0);
+          _spendingData.unshift({
+            month: getMonthAbbr(parseInt(month)),
+            spending: sum,
+          });
+        }
+      );
+      setSpendingData(_spendingData);
+    }
+  }, [transactionMap, selectedYear]);
+
+  useEffect(() => {
+    if (selectedYear && selectedMonth && transactionMap) {
+      const [month, year] = selectedMonth.split("/");
+      const transactions =
+        transactionMap.get(selectedYear)?.get(month) || [];
+
+      const categoryTotals = transactions.reduce((acc, tx) => {
+        if (tx.amount > 0) {
+          const category = tx.plaidCategoryPrimary || "Uncategorized";
+          acc[category] = (acc[category] || 0) + Math.abs(tx.amount);
+        }
+        return acc;
+      }, {});
+
+      console.log(categoryTotals);
+
+      const _categoryData = Object.entries(categoryTotals).map(
+        ([category, spending], index) => ({
+          name: category,
+          value: spending,
+          color: COLORS[index % COLORS.length], // Assign color cyclically
+        })
+      );
+
+      // Optional: Sort by highest spending first
+      setCategoryData(_categoryData as any);
+    }
+  }, [transactionMap, selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    if (userData) {
+      setSelectedMonth(userData!.transactionMonths.at(0) ?? "")
+    }
+  }, [userData]);
 
   // LLM query + response state
   const [llmQuery, setLlmQuery] = useState<string>("");
@@ -245,12 +521,7 @@ const AnalyticsPage: React.FC = () => {
   const [llmError, setLlmError] = useState<string>("");
 
   // Derived data for current month
-  const currentMonthData = categoryData[selectedMonth] || [];
-  const recs = recommendations[selectedMonth];
-  const totalSpending = useMemo(
-    () => currentMonthData.reduce((sum, c) => sum + c.value, 0),
-    [currentMonthData]
-  );
+  const recs = recommendations[selectedMonth ?? "October"];
 
   // Map month name to month number for backend API
   const monthNameToNumber: Record<string, number> = {
@@ -287,18 +558,21 @@ const AnalyticsPage: React.FC = () => {
         throw new Error("You must be logged in to use this feature");
       }
 
-      const response = await fetch(`${import.meta.env.VITE_BASE_URL}api/llm/query`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          query: llmQuery,
-          month: monthNameToNumber[selectedMonth] || 10,
-          year: new Date().getFullYear(),
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_URL}api/llm/query`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            query: llmQuery,
+            month: Number(selectedMonth.split("/")[0]) || 10,
+            year: new Date().getFullYear(),
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -379,21 +653,45 @@ const AnalyticsPage: React.FC = () => {
                 flexWrap: "wrap",
               }}
             >
-              <FormControl size="small" sx={{ minWidth: 200 }}>
-                <InputLabel id="month-select-label">Select Month</InputLabel>
-                <Select
-                  labelId="month-select-label"
-                  label="Select Month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                >
-                  {monthOptions.map((m) => (
-                    <MenuItem key={m} value={m}>
-                      {m}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {/* Filters (currently only month filter) */}
+              <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
+                <FormControl sx={{ minWidth: 180 }}>
+                  <InputLabel>Filter by Month</InputLabel>
+                  <Select
+                    value={selectedMonth}
+                    label="Filter by Month"
+                    onChange={(e) => {
+                      setSelectedMonth(e.target.value);
+                    }}
+                  >
+                    {userData?.transactionMonths.map((monthStr) => (
+                      <MenuItem key={monthStr} value={monthStr}>
+                        {convertToReadableDate(monthStr)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
+                {transactionMap && (
+                  <FormControl sx={{ minWidth: 180 }}>
+                    <InputLabel>Filter by Year</InputLabel>
+                    <Select
+                      value={selectedYear}
+                      label="Filter by Year"
+                      onChange={(e) => {
+                        setSelectedYear(e.target.value);
+                      }}
+                    >
+                      {Array.from(transactionMap!).map(([year, monthMap]) => (
+                        <MenuItem key={year} value={year}>
+                          {year}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              </Box>
 
               <Box sx={{ ml: "auto" }}>
                 <Chip
@@ -404,7 +702,7 @@ const AnalyticsPage: React.FC = () => {
                         Total Spending
                       </Typography>
                       <Typography fontWeight={700}>
-                        ${totalSpending.toLocaleString()}
+                        ${totalSpent.toLocaleString()}
                       </Typography>
                     </Box>
                   }
@@ -416,98 +714,93 @@ const AnalyticsPage: React.FC = () => {
           {/* Top charts: bar (months) + pie (categories) */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
             {/* Spending by month bar chart */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card sx={{ borderRadius: 3 }}>
-                <CardContent>
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                    gutterBottom
-                  >
-                    Spending by Month
-                  </Typography>
-                  <Box sx={{ width: "100%", height: 320 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlySpendingData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "white",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: 8,
-                            fontSize: 14,
-                          }}
-                          formatter={(v: number) => [
-                            `$${v.toLocaleString()}`,
-                            "Spending",
-                          ]}
-                        />
-                        <Bar
-                          dataKey="amount"
-                          fill="#00786F"
-                          radius={[8, 8, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+            {transactionMap && spendingData && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      Spending by Month
+                    </Typography>
+                    <Box sx={{ width: "100%", height: 320 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={spendingData ?? undefined}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: 8,
+                              fontSize: 14,
+                            }}
+                            formatter={(v: number) => [
+                              `$${v.toLocaleString()}`,
+                              "Spending",
+                            ]}
+                          />
+                          <Bar
+                            dataKey="spending"
+                            fill="#00786F"
+                            radius={[8, 8, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
 
             {/* Spending by category pie chart */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card sx={{ borderRadius: 3 }}>
-                <CardContent>
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                    gutterBottom
-                  >
-                    Spending by Category — {selectedMonth}
-                  </Typography>
-                  <Box sx={{ width: "100%", height: 320 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={currentMonthData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={(props: PieLabelRenderProps) =>
-                            `${props.name ?? ""} ${(
-                              (props.percent ?? 0) * 100
-                            ).toFixed(0)}%`
-                          }
-                          outerRadius={100}
-                          dataKey="value"
-                        >
-                          {currentMonthData.map((entry, index) => (
-                            <Cell key={index} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "white",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: 8,
-                            fontSize: 14,
-                          }}
-                          formatter={(v: number) =>
-                            `$${v.toLocaleString()}`
-                          }
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+            {categoryData && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card sx={{ borderRadius: 3 }}>
+                  <CardContent>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      Spending by Category — {convertToReadableDate(selectedMonth)}
+                    </Typography>
+                    <Box sx={{ width: "100%", height: 320 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categoryData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={(props: PieLabelRenderProps) =>
+                              `${props.name ?? ""} ${(
+                                (props.percent ?? 0) * 100
+                              ).toFixed(0)}%`
+                            }
+                            outerRadius={65}
+                            dataKey="value"
+                          >
+                            {categoryData.map((entry, index) => (
+                              <Cell key={index} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: 8,
+                              fontSize: 14,
+                            }}
+                            formatter={(v: number) => `$${v.toLocaleString()}`}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
           </Grid>
 
           {/* Static AI-like insights (predefined per month) */}
-          <Card sx={{ borderRadius: 3, mb: 3 }}>
+          {/*
+<Card sx={{ borderRadius: 3, mb: 3 }}>
             <CardContent>
               <Typography variant="h6" fontWeight={700} gutterBottom>
                 AI-Powered Insights — {selectedMonth}
@@ -577,7 +870,79 @@ const AnalyticsPage: React.FC = () => {
               </List>
             </CardContent>
           </Card>
+            */}
 
+          
+          {/* Category list with progress bars */}
+          {spendingData && categoryData && (
+            <Card sx={{ borderRadius: 3, mb: 3}}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  Category Breakdown — {convertToReadableDate(selectedMonth)}
+                </Typography>
+
+                <Box sx={{ display: "grid", gap: 1.5 }}>
+                  {categoryData.map((cat) => {
+                    const pct = totalSpent ? (cat.value / totalSpent) * 100 : 0;
+                    return (
+                      <Box
+                        key={cat.name}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          p: 1.5,
+                          bgcolor: "#F9FAFB",
+                          borderRadius: 2,
+                        }}
+                      >
+                        {/* Color dot for category */}
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            bgcolor: cat.color,
+                            flexShrink: 0,
+                          }}
+                        />
+                        {/* Name + progress bar */}
+                        <Box sx={{ flex: 1 }}>
+                          <Typography fontSize={14} sx={{ mb: 0.5 }}>
+                            {cat.name}
+                          </Typography>
+                          <LinearProgress
+                            variant="determinate"
+                            value={pct}
+                            sx={{
+                              height: 8,
+                              borderRadius: 999,
+                              "& .MuiLinearProgress-bar": {
+                                bgcolor: cat.color,
+                              },
+                            }}
+                          />
+                        </Box>
+                        {/* Percentage + value */}
+                        <Box sx={{ textAlign: "right", minWidth: 140 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mr: 1 }}
+                          >
+                            {pct.toFixed(1)}%
+                          </Typography>
+                          <Typography fontWeight={600}>
+                            ${cat.value.toLocaleString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </CardContent>
+            </Card>
+          )}
           {/* Live LLM-based financial advisor section */}
           <Card sx={{ borderRadius: 3, mb: 3 }}>
             <CardContent>
@@ -604,11 +969,7 @@ const AnalyticsPage: React.FC = () => {
                 </Typography>
               </Box>
 
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 2 }}
-              >
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Get personalized financial advice based on your spending data
                 for {selectedMonth}
               </Typography>
@@ -689,76 +1050,6 @@ const AnalyticsPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Category list with progress bars */}
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                Category Breakdown — {selectedMonth}
-              </Typography>
-
-              <Box sx={{ display: "grid", gap: 1.5 }}>
-                {currentMonthData.map((cat) => {
-                  const pct = totalSpending
-                    ? (cat.value / totalSpending) * 100
-                    : 0;
-                  return (
-                    <Box
-                      key={cat.name}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        p: 1.5,
-                        bgcolor: "#F9FAFB",
-                        borderRadius: 2,
-                      }}
-                    >
-                      {/* Color dot for category */}
-                      <Box
-                        sx={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          bgcolor: cat.color,
-                          flexShrink: 0,
-                        }}
-                      />
-                      {/* Name + progress bar */}
-                      <Box sx={{ flex: 1 }}>
-                        <Typography fontSize={14} sx={{ mb: 0.5 }}>
-                          {cat.name}
-                        </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={pct}
-                          sx={{
-                            height: 8,
-                            borderRadius: 999,
-                            "& .MuiLinearProgress-bar": {
-                              bgcolor: cat.color,
-                            },
-                          }}
-                        />
-                      </Box>
-                      {/* Percentage + value */}
-                      <Box sx={{ textAlign: "right", minWidth: 140 }}>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mr: 1 }}
-                        >
-                          {pct.toFixed(1)}%
-                        </Typography>
-                        <Typography fontWeight={600}>
-                          ${cat.value.toLocaleString()}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </CardContent>
-          </Card>
         </Box>
       </Box>
     </Box>
